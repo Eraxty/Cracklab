@@ -1,9 +1,12 @@
 from analysis.frequency import analyze_frequency
+from analysis.ngrams import count_ngrams
 
 text = "Hello, World!"
 
 frequency = analyze_frequency(text)
+bigrams = count_ngrams(text, 2)
 
+print(bigrams)
 print("Character Frequency\n")
 
 sorted_frequency = sorted(
