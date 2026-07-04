@@ -1,7 +1,14 @@
 from analysis.frequency import analyze_frequency
 from analysis.ngrams import count_ngrams
+from analysis.dict import PatternDictionary
 
-text = "Hello, World!"
+dictionary = PatternDictionary()
+dictionary.load("data/cleaned_words.txt")
+
+with open("crack.txt", "r") as file:
+    text = file.read()
+
+print(dictionary.find_matches("QWEER"))
 
 frequency = analyze_frequency(text)
 bigrams = count_ngrams(text, 2)
