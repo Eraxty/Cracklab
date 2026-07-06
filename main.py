@@ -76,7 +76,6 @@ def _parse_args():
     parser.add_argument("input_file", nargs="?", default=str(INPUT_FILE), help="ciphertext file")
     parser.add_argument("--wordlist", default=str(WORDLIST_FILE), help="dictionary word list")
     return parser.parse_args()
-z
 
 def main():
     args = _parse_args()
