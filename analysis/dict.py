@@ -14,6 +14,7 @@ COMMON_TRIGRAMS = {
     "ALL", "ELL",
 }
 COMMON_WORDS = {
+    "A", "I",
     "ABOUT", "AFTER", "AGAIN", "ALSO", "BECAUSE", "BEEN", "BEFORE",
     "BEING", "BELLY", "BETTER", "BETWEEN", "BOTH", "COULD", "EVERY",
     "FIRST", "FOUND", "FROM", "GOOD", "GREAT", "HELLO", "HERE",
@@ -35,7 +36,7 @@ def normalize_word(word):
 
 
 def filter_short_words(word):
-    return len(word) >= 2
+    return len(word) >= 1
 
 
 def common_letter_score(word):

@@ -1,5 +1,7 @@
 from pathlib import Path
 import re
+import argparse
+import sys
 
 from analysis.dict import PatternDictionary
 from analysis.solver import solve
@@ -9,6 +11,7 @@ from analysis.report import generate_report
 ROOT = Path(__file__).resolve().parent
 INPUT_FILE = ROOT / "crack.txt"
 WORDLIST_FILE = ROOT / "data" / "cleaned_words.txt"
+FALLBACK_WORDLIST = ROOT / "data" / "words.txt"
 
 
 def _format_percent(value):
@@ -40,6 +43,19 @@ def _print_top_bigrams(bigrams, limit=10):
         print(f"{gram} {count}")
 
 
+def _load_dictionary(wordlist_path):
+    dictionary = PatternDictionary()
+    if wordlist_path.exists():
+        dictionary.load(wordlist_path)
+        return dictionary
+
+    if FALLBACK_WORDLIST.exists():
+        dictionary.load(FALLBACK_WORDLIST)
+        return dictionary
+
+    raise FileNotFoundError(f"No word list found at {wordlist_path} or {FALLBACK_WORDLIST}")
+
+
 def _print_solver_result(solution):
     print("\nSolver Result\n")
 
@@ -55,16 +71,28 @@ def _print_solver_result(solution):
     print(" ".join(solution["words"]))
 
 
-def main():
-    dictionary = PatternDictionary()
-    dictionary.load(WORDLIST_FILE)
+def _parse_args():
+    parser = argparse.ArgumentParser(prog="CrackLab", description="Cipher analysis pipeline")
+    parser.add_argument("input_file", nargs="?", default=str(INPUT_FILE), help="ciphertext file")
+    parser.add_argument("--wordlist", default=str(WORDLIST_FILE), help="dictionary word list")
+    return parser.parse_args()
+z
 
-    text = INPUT_FILE.read_text()
+def main():
+    args = _parse_args()
+
+    try:
+        dictionary = _load_dictionary(Path(args.wordlist))
+        text = Path(args.input_file).read_text(encoding="utf-8", errors="ignore")
+    except FileNotFoundError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
     report = generate_report(text, dictionary)
     classification = report["classification"]
 
     _print_header()
-    print(f"Input File:\n{INPUT_FILE.name}\n")
+    print(f"Input File:\n{Path(args.input_file).name}\n")
     print(f"Detected Cipher:\n{classification['cipher']}\n")
     print(f"Confidence:\n{classification['confidence']}%\n")
 
@@ -85,6 +113,8 @@ def main():
     else:
         print("\nSolver for this cipher has not been implemented yet.")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -40,6 +40,16 @@ def _patterns_present(patterns):
         return True
     return bool(patterns)
 
+
+def _confidence_from_scores(scores, cipher):
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    top_score = scores[cipher]
+    runner_up = next((score for name, score in ranked if name != cipher), 0)
+    margin = max(0, top_score - runner_up)
+    confidence = 55 + margin * 2 + max(0, top_score - 20) * 0.5
+    return max(0, min(99, int(round(confidence))))
+
+
 def classify(report):
     scores = {
         "substitution": 0,
@@ -102,8 +112,7 @@ def classify(report):
             "vigenere": "Vigenère Cipher",
             "unknown": "Unknown",
         }[cipher],
-        "confidence": min(100, int(scores[cipher])),
+        "confidence": _confidence_from_scores(scores, cipher),
         "score": scores,
         "evidence": evidence,
     }
-

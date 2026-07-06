@@ -9,23 +9,32 @@ def solve(cipher_words, dictionary):
     whose plaintext word is stored under the "word" key.
     """
 
-    def backtrack(index, current_mapping, solved_words):
-        # Base case: every cipher word has a selected plaintext candidate.
-        # At this point the accumulated mapping is valid because every step
-        # reached this point through merge_mappings().
-        if index == len(cipher_words):
+    word_items = []
+    for index, cipher_word in enumerate(cipher_words):
+        candidates = dictionary.find_matches(cipher_word)
+        if not candidates:
+            return None
+        word_items.append({
+            "index": index,
+            "cipher_word": cipher_word,
+            "candidates": candidates,
+        })
+
+    word_items.sort(key=lambda item: (len(item["candidates"]), -len(item["cipher_word"])))
+
+    solved_words = [None] * len(cipher_words)
+
+    def backtrack(index, current_mapping):
+        if index == len(word_items):
             return {
                 "mapping": current_mapping,
-                "words": solved_words,
+                "words": solved_words[:],
             }
 
-        cipher_word = cipher_words[index]
-        candidates = dictionary.find_matches(cipher_word)
+        item = word_items[index]
+        cipher_word = item["cipher_word"]
 
-        # Try the dictionary's ranked candidates in order. Each candidate
-        # creates a small word-level mapping, then we ask merge_mappings()
-        # whether it is compatible with everything chosen so far.
-        for candidate in candidates:
+        for candidate in item["candidates"]:
             plain_word = candidate["word"]
             candidate_mapping = create_mapping(cipher_word, plain_word)
 
@@ -39,19 +48,14 @@ def solve(cipher_words, dictionary):
             if merged_mapping is None:
                 continue
 
-            # Recurse with the compatible mapping and the candidate word added
-            # to the partial solution. If deeper words cannot be solved, the
-            # loop naturally continues with the next candidate here.
-            result = backtrack(
-                index + 1,
-                merged_mapping,
-                solved_words + [plain_word],
-            )
+            solved_words[item["index"]] = plain_word
+            result = backtrack(index + 1, merged_mapping)
 
             if result is not None:
                 return result
 
-        # No candidate for this word could lead to a full solution.
+            solved_words[item["index"]] = None
+
         return None
 
-    return backtrack(0, {}, [])
+    return backtrack(0, {})
