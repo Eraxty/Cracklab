@@ -90,6 +90,26 @@ COMMON_DOUBLES = {
     "PP", "MM",
 }
 
+# Weighted quadgrams
+COMMON_QUADGRAMS = {
+    "TION": 7, "THER": 6, "THAT": 6, "WITH": 6, "MENT": 6,
+    "OULD": 5, "IGHT": 5, "HAVE": 5, "HICH": 5, "WHIC": 5,
+    "THIS": 5, "THIN": 5, "THEY": 5, "ATIN": 5, "HERE": 5,
+    "OUGH": 5, "ENCE": 4, "ANCE": 4, "NESS": 4, "INGS": 4,
+    "ABLE": 4, "IOUS": 4, "EVEL": 4, "FROM": 4, "WERE": 4,
+    "MENT": 4, "ICAL": 4, "SOME": 4, "OUNT": 4, "ESTI": 4,
+    "TING": 3, "RING": 3, "ALLY": 3, "NDER": 3, "EVER": 3,
+    "ATED": 3, "INTE": 3, "OTHE": 3, "TTHE": 3, "SAND": 3,
+}
+
+# Bigrams are rare in English Penalising these to remove random noise
+RARE_BIGRAMS = {
+    "QJ", "JQ", "QX", "XQ", "QZ", "ZQ", "ZX", "XZ",
+    "JX", "XJ", "JZ", "ZJ", "QQ", "JJ", "ZZ", "XX",
+    "VX", "XV", "BX", "XB", "WX", "XW", "VJ", "JV",
+    "FQ", "QF", "GX", "XG", "HX", "XH", "KX", "XK",
+    "WZ", "ZW", "VQ", "QV", "VZ", "ZV",
+}
 
 # Reward common English words.
 def score_dictionary(text):
@@ -97,7 +117,7 @@ def score_dictionary(text):
 
     for word in text.split():
         if word in COMMON_WORDS:
-            score += 20
+            score += 5 * len(word)
 
     return score
 
@@ -181,6 +201,31 @@ def score_double_letters(text):
     return score
 
 
+# Reward
+def score_quadgrams(text):
+    score = 0
+
+    for i in range(len(text) - 3):
+        quad = text[i:i + 4]
+
+        if quad in COMMON_QUADGRAMS:
+            score += COMMON_QUADGRAMS[quad]
+
+    return score
+
+
+# Penalise bigrams
+def score_rare_bigrams(text):
+    score = 0
+
+    for i in range(len(text) - 1):
+        bigram = text[i:i + 2]
+
+        if bigram in RARE_BIGRAMS:
+            score -= 10
+
+    return score
+
 # Final English score.
 def score_text(text):
     text = text.upper()
@@ -189,8 +234,10 @@ def score_text(text):
     score += score_dictionary(text)
     score += score_bigrams(text)
     score += score_trigrams(text)
+    score += score_quadgrams(text)
     score += score_frequency(text)
     score += score_vowels(text)
     score += score_double_letters(text)
+    score += score_rare_bigrams(text)
 
     return score
