@@ -9,17 +9,6 @@ def _raw_candidates(dictionary, cipher_word, limit=50):
     matches = getattr(dictionary, "patterns", {}).get(pattern, [])
     return matches[:limit] if limit is not None else matches
 
-def _complete_mapping(mapping, cipher_words):
-    used = set(mapping.values())
-    remaining = [letter for letter in ENG_FREQ if letter not in used]
-    completed = dict(mapping)
-
-    for cipher_letter in sorted({ch for word in cipher_words for ch in word}):
-        if cipher_letter not in completed and remaining:
-            completed[cipher_letter] = remaining.pop(0)
-
-    return completed
-
 def _decrypt_words(cipher_words, mapping):
     return [
         "".join(mapping.get(letter, "_") for letter in word)
