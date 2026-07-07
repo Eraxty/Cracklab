@@ -65,19 +65,19 @@ COMMON_WORDS = {
 }
 
 COMMON_BIGRAMS = {
-    "TH", "HE", "IN", "ER", "AN", "RE",
-    "ON", "AT", "EN", "ND", "TI", "ES",
-    "OR", "TE", "OF", "ED", "IS", "IT",
-    "AL", "AR", "ST", "TO", "NT", "NG",
-    "SE", "HA", "AS", "OU", "IO", "LE",
-    "VE", "CO", "ME", "DE", "HI", "RI",
+    "TH": 5, "HE": 5, "IN": 4, "ER": 4, "AN": 4, "RE": 4,
+    "ON": 3, "AT": 3, "EN": 3, "ND": 3, "TI": 3, "ES": 3,
+    "OR": 3, "TE": 3, "OF": 3, "ED": 3, "IS": 3, "IT": 3,
+    "AL": 2, "AR": 2, "ST": 2, "TO": 2, "NT": 2, "NG": 2,
+    "SE": 2, "HA": 2, "AS": 2, "OU": 2, "IO": 2, "LE": 2,
+    "VE": 2, "CO": 2, "ME": 2, "DE": 2, "HI": 2, "RI": 2,
 }
 
 COMMON_TRIGRAMS = {
-    "THE", "AND", "ING", "HER", "ERE",
-    "ENT", "THA", "NTH", "WAS", "ETH",
-    "FOR", "DTH", "HAT", "ION", "TIO",
-    "VER", "TER", "HES", "ALL", "OFT",
+    "THE": 7, "AND": 6, "ING": 6, "HER": 5, "ERE": 5,
+    "ENT": 5, "THA": 5, "NTH": 4, "WAS": 4, "ETH": 4,
+    "FOR": 4, "DTH": 3, "HAT": 4, "ION": 5, "TIO": 5,
+    "VER": 3, "TER": 4, "HES": 3, "ALL": 3, "OFT": 3,
 }
 
 COMMON_LETTERS = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
@@ -90,19 +90,17 @@ COMMON_DOUBLES = {
     "PP", "MM",
 }
 
-# Weighted quadgrams
 COMMON_QUADGRAMS = {
     "TION": 7, "THER": 6, "THAT": 6, "WITH": 6, "MENT": 6,
     "OULD": 5, "IGHT": 5, "HAVE": 5, "HICH": 5, "WHIC": 5,
     "THIS": 5, "THIN": 5, "THEY": 5, "ATIN": 5, "HERE": 5,
     "OUGH": 5, "ENCE": 4, "ANCE": 4, "NESS": 4, "INGS": 4,
     "ABLE": 4, "IOUS": 4, "EVEL": 4, "FROM": 4, "WERE": 4,
-    "MENT": 4, "ICAL": 4, "SOME": 4, "OUNT": 4, "ESTI": 4,
+    "ICAL": 4, "SOME": 4, "OUNT": 4, "ESTI": 4, "ATED": 3,
     "TING": 3, "RING": 3, "ALLY": 3, "NDER": 3, "EVER": 3,
-    "ATED": 3, "INTE": 3, "OTHE": 3, "TTHE": 3, "SAND": 3,
+    "INTE": 3, "OTHE": 3, "TTHE": 3, "SAND": 3,
 }
 
-# Bigrams are rare in English Penalising these to remove random noise
 RARE_BIGRAMS = {
     "QJ", "JQ", "QX", "XQ", "QZ", "ZQ", "ZX", "XZ",
     "JX", "XJ", "JZ", "ZJ", "QQ", "JJ", "ZZ", "XX",
@@ -111,122 +109,101 @@ RARE_BIGRAMS = {
     "WZ", "ZW", "VQ", "QV", "VZ", "ZV",
 }
 
-# Reward common English words.
 def score_dictionary(text):
     score = 0
-
     for word in text.split():
         if word in COMMON_WORDS:
             score += 5 * len(word)
-
     return score
 
 
-# Reward common English bigrams.
 def score_bigrams(text):
+    letters = "".join(c for c in text if c.isalpha())
     score = 0
-
-    for i in range(len(text) - 1):
-        bigram = text[i:i + 2]
-
+    streak = 0
+    for i in range(len(letters) - 1):
+        bigram = letters[i:i + 2]
         if bigram in COMMON_BIGRAMS:
-            score += 3
-
+            streak += 1
+            score += COMMON_BIGRAMS[bigram] * streak
+        else:
+            streak = 0
     return score
 
 
-# Reward common English trigrams.
 def score_trigrams(text):
+    letters = "".join(c for c in text if c.isalpha())
     score = 0
-
-    for i in range(len(text) - 2):
-        trigram = text[i:i + 3]
-
+    streak = 0
+    for i in range(len(letters) - 2):
+        trigram = letters[i:i + 3]
         if trigram in COMMON_TRIGRAMS:
-            score += 5
-
+            streak += 1
+            score += COMMON_TRIGRAMS[trigram] * streak
+        else:
+            streak = 0
     return score
 
 
-# Reward common letters.
 def score_frequency(text):
     score = 0
-
     for letter in text:
         if not letter.isalpha():
             continue
-
         if letter in COMMON_LETTERS:
             score += len(COMMON_LETTERS) - COMMON_LETTERS.index(letter)
-
     return score
 
 
-# Reward realistic vowel ratios.
 def score_vowels(text):
     letters = [c for c in text if c.isalpha()]
-
     if not letters:
         return 0
-
     vowels = sum(1 for letter in letters if letter in VOWELS)
-
     vowel_ratio = vowels / len(letters)
-
     if 0.30 <= vowel_ratio <= 0.55:
         return 12
-
     if vowels == 0:
         return -20
-
     return 0
 
 
-# Reward common double letters.
 def score_double_letters(text):
     score = 0
-
     for i in range(len(text) - 1):
         pair = text[i:i + 2]
-
         if not pair.isalpha():
             continue
-
         if pair in COMMON_DOUBLES:
             score += 5
-
         elif pair[0] == pair[1]:
             score -= 2
-
     return score
 
 
-# Reward
 def score_quadgrams(text):
+    letters = "".join(c for c in text if c.isalpha())
     score = 0
-
-    for i in range(len(text) - 3):
-        quad = text[i:i + 4]
-
+    streak = 0
+    for i in range(len(letters) - 3):
+        quad = letters[i:i + 4]
         if quad in COMMON_QUADGRAMS:
-            score += COMMON_QUADGRAMS[quad]
-
+            streak += 1
+            score += COMMON_QUADGRAMS[quad] * streak
+        else:
+            streak = 0
     return score
 
 
-# Penalise bigrams
 def score_rare_bigrams(text):
+    letters = "".join(c for c in text if c.isalpha())
     score = 0
-
-    for i in range(len(text) - 1):
-        bigram = text[i:i + 2]
-
+    for i in range(len(letters) - 1):
+        bigram = letters[i:i + 2]
         if bigram in RARE_BIGRAMS:
             score -= 10
-
     return score
 
-# Final English score.
 def score_text(text):
     text = text.upper()
 
