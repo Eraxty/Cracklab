@@ -6,7 +6,7 @@ import sys
 from analysis.dict import PatternDictionary
 from analysis.solver import solve
 from analysis.report import generate_report
-
+from analysis.english_scorer import score_text
 
 ROOT = Path(__file__).resolve().parent
 INPUT_FILE = ROOT / "crack.txt"
@@ -113,7 +113,10 @@ def main():
         print("\nSolver for this cipher has not been implemented yet.")
 
     return 0
-
+print(score_text("THIS IS A TEST"))
+print(score_text("THE QUICK BROWN FOX"))
+print(score_text("QZX JJK PWOER"))
+print(score_text("CSY GOBPU VGIR"))
 
 if __name__ == "__main__":
     raise SystemExit(main())
