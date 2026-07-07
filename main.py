@@ -60,15 +60,13 @@ def _print_solver_result(solution):
     print("\nSolver Result\n")
 
     if solution is None:
-        print("No mapping-consistent solution found.")
+        print("No mapping solution found.")
         return
-
-    print("Mapping:")
     for cipher_letter in sorted(solution["mapping"]):
         print(f"{cipher_letter} -> {solution['mapping'][cipher_letter]}")
 
-    print("\nRecovered Words:")
-    print(" ".join(solution["words"]))
+    print("\nPartial Plaintext:")
+    print(solution["plaintext"])
 
 
 def _parse_args():
@@ -113,10 +111,6 @@ def main():
         print("\nSolver for this cipher has not been implemented yet.")
 
     return 0
-print(score_text("THIS IS A TEST"))
-print(score_text("THE QUICK BROWN FOX"))
-print(score_text("QZX JJK PWOER"))
-print(score_text("CSY GOBPU VGIR"))
 
 if __name__ == "__main__":
     raise SystemExit(main())
