@@ -6,6 +6,7 @@ import sys
 from analysis.dict import PatternDictionary
 from analysis.solver import solve
 from analysis.report import generate_report
+from analysis.prepare import prepare_words, print_prepared
 from analysis.english_scorer import score_text
 
 ROOT = Path(__file__).resolve().parent
@@ -105,10 +106,14 @@ def main():
 
     if classification["cipher"] == "Monoalphabetic Substitution":
         cipher_words = re.findall(r"[A-Z]+", text.upper())
+        prepared = prepare_words(cipher_words, dictionary)
+        print("Prepared Word List:\n")
+        print_prepared(prepared)
+        print()
         solution = solve(cipher_words, dictionary)
         _print_solver_result(solution)
     else:
-        print("\nSolver for this cipher has not been implemented yet.")
+        print("\nno solver for ts rn.")
 
     return 0
 
