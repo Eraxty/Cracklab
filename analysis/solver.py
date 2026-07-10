@@ -1,5 +1,6 @@
 from analysis.mapping import create_mapping, merge_mappings
 from analysis.english_scorer import score_text
+from analysis.prepare import prepare_words
 
 def decrypt_partial(cipher_words, mapping):
     plaintext = []
@@ -10,54 +11,118 @@ def decrypt_partial(cipher_words, mapping):
         plaintext.append(decrypted)
     return " ".join(plaintext)
 
-def score_mapping(cipher_words, mapping):
+def evaluate_mapping(cipher_words, mapping):
     plaintext = decrypt_partial(cipher_words, mapping)
     return score_text(plaintext)
 
-def solve(cipher_words, dictionary):
-    unique_words = sorted(
-        set(cipher_words),
-        key=lambda word: (
-            len(dictionary.find_matches(word, limit=None)),
-            -len(word),
-        ),
-    )
+def generate_candidates(cipher_word, mapping, dictionary, limit=100):
+    return dictionary.find_matches(cipher_word, limit=limit, mapping=mapping)
 
-    beam = [({}, 0)]
-    for cipher_word in unique_words:
-        matches = dictionary.find_matches(cipher_word, limit=30)
-        if not matches:
-          continue
-        
-        next_beam = []
-        for mapping, _ in beam:
-            for candidate in matches:
-                plain_word = candidate["word"]
-                candidate_mapping = create_mapping(cipher_word, plain_word)
-          
-                if candidate_mapping is None:
-                    continue
-                merged = merge_mappings(mapping, candidate_mapping)
-
-                if merged is None:
-                    continue
-                score = score_mapping(cipher_words, merged)
-                next_beam.append((merged, score))
-
-        if not next_beam:
-            break
-
-        next_beam.sort(
-            key=lambda item: item[1],
-            reverse=True,
-        )
-        beam = next_beam[:10]
-
-    if not beam:
+def evaluate_candidate(cipher_word, plain_word, mapping, cipher_words):
+    candidate_mapping = create_mapping(cipher_word, plain_word)
+    if candidate_mapping is None:
         return None
-    best_mapping, best_score = beam[0]
+    merged = merge_mappings(mapping, candidate_mapping)
+    if merged is None:
+        return None
+    plaintext = decrypt_partial(cipher_words, merged)
+    score = score_text(plaintext)
     return {
-        "mapping": best_mapping,
-        "plaintext": decrypt_partial(cipher_words, best_mapping),
-        "score": best_score,
+        "mapping": merged,
+        "score": score,
+        "plaintext": plaintext,
+    }
+
+def choose_best_candidate(item, mapping, cipher_words, dictionary, verbose=False, limit=100):
+    cipher_word = item["word"]
+    candidates = generate_candidates(cipher_word, mapping, dictionary, limit=limit)
+    if not candidates:
+        return None
+
+    best = None
+
+    if verbose:
+        print(f"\n  Cipher word: {cipher_word}")
+        print(f"  Candidates: {len(candidates)}")
+        print(f"  Trying candidates...")
+    for candidate in candidates:
+        plain_word = candidate["word"]
+        result = evaluate_candidate(cipher_word, plain_word, mapping, cipher_words)
+        if result is None:
+            continue
+        if verbose:
+            print(f"    {plain_word:15s}  score {result['score']}")
+        if best is None or result["score"] > best["score"]:
+            best = {
+                "candidate": plain_word,
+                "mapping": result["mapping"],
+                "score": result["score"],
+                "plaintext": result["plaintext"],
+            }
+
+    if verbose and best:
+        print(f"  Chosen: {best['candidate']}")
+        print(f"  Current score: {best['score']}")
+
+    return best
+
+def run_pass(prepared, mapping, cipher_words, dictionary, pass_num, verbose=False):
+    if verbose:
+        print(f"\n{'='*40}")
+        print(f"Pass {pass_num}")
+        print(f"{'='*40}")
+
+    current_mapping = dict(mapping)
+
+    for item in prepared:
+        if item["candidate_count"] == 0:
+            continue
+
+        result = choose_best_candidate(
+            item, current_mapping, cipher_words, dictionary, verbose=verbose
+        )
+
+        if result is not None and result["mapping"] is not None:
+            if result["mapping"] != current_mapping:
+                current_mapping = result["mapping"]
+
+    final_score = evaluate_mapping(cipher_words, current_mapping)
+    plaintext = decrypt_partial(cipher_words, current_mapping)
+    improved = final_score > evaluate_mapping(cipher_words, mapping)
+
+    if verbose:
+        print(f"\n  Pass {pass_num} score: {final_score}")
+        print(f"  Plaintext: {plaintext}")
+
+    return current_mapping, final_score, improved
+
+def solve(cipher_words, dictionary, verbose=True):
+    prepared = prepare_words(cipher_words, dictionary)
+    mapping = {}
+    pass_num = 0
+    scores = []
+
+    while True:
+        pass_num += 1
+        new_mapping, new_score, improved = run_pass(
+            prepared, mapping, cipher_words, dictionary, pass_num, verbose=verbose
+        )
+        scores.append(new_score)
+        if not improved:
+            if verbose:
+                print(f"\n{'='*40}")
+                print(f"No improvement. Finished after {pass_num - 1} passes.")
+                print(f"{'='*40}")
+            break
+        mapping = new_mapping
+    final_plaintext = decrypt_partial(cipher_words, mapping)
+    final_score = evaluate_mapping(cipher_words, mapping)
+
+    if verbose and scores:
+        print(f"\nPass scores: {scores}")
+
+    return {
+        "mapping": mapping,
+        "plaintext": final_plaintext,
+        "score": final_score,
     }
