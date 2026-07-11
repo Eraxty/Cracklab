@@ -34,38 +34,7 @@ VOWELS = set("AEIOUY")
 RARE_PENALTY = {"Q": -30, "X": -25, "Z": -30, "J": -20}
 
 
-def load_common_words(filepath):
-    words = set()
-    try:
-        with open(filepath, "r") as f:
-            for line in f:
-                w = line.strip().upper()
-                if w.isalpha():
-                    words.add(w)
-    except FileNotFoundError:
-        pass
-    return words
-
-
-def normalize_word(word):
-    return word.strip().upper()
-
-
-def filter_short_words(word):
-    return len(word) >= 1
-
-
-def is_consistent_with_mapping(word, cipher_word, mapping):
-    plain_to_cipher = {v: k for k, v in mapping.items()}
-    for cipher_letter, plain_letter in zip(cipher_word.upper(), word.upper()):
-        if cipher_letter in mapping and mapping[cipher_letter] != plain_letter:
-            return False
-        if plain_letter in plain_to_cipher and plain_to_cipher[plain_letter] != cipher_letter:
-            return False
-    return True
-
-
-def score_letter_frequency(word):
+def _score_letter_frequency(word):
     score = 0
     for letter in word:
         if letter in COMMON_LETTERS:
@@ -73,7 +42,7 @@ def score_letter_frequency(word):
     return score
 
 
-def score_bigrams(word):
+def _score_bigrams(word):
     score = 0
     for i in range(len(word) - 1):
         if word[i:i + 2] in COMMON_BIGRAMS:
@@ -81,7 +50,7 @@ def score_bigrams(word):
     return score
 
 
-def score_trigrams(word):
+def _score_trigrams(word):
     score = 0
     for i in range(len(word) - 2):
         if word[i:i + 3] in COMMON_TRIGRAMS:
@@ -89,7 +58,7 @@ def score_trigrams(word):
     return score
 
 
-def score_vowel_pattern(word):
+def _score_vowel_pattern(word):
     vowels = sum(1 for letter in word if letter in VOWELS)
     if vowels == 0:
         return -20
@@ -99,7 +68,7 @@ def score_vowel_pattern(word):
     return 0
 
 
-def score_rare_letters(word):
+def _score_rare_letters(word):
     penalty = 0
     for letter in word:
         if letter in RARE_PENALTY:
@@ -107,41 +76,30 @@ def score_rare_letters(word):
     return penalty
 
 
-def score_word(word, common_words_set):
-    base = score_letter_frequency(word)
-    base += score_bigrams(word)
-    base += score_trigrams(word)
-    base += score_vowel_pattern(word)
-    base += score_rare_letters(word)
+def _score_word(word, common_words_set):
+    score = _score_letter_frequency(word)
+    score += _score_bigrams(word)
+    score += _score_trigrams(word)
+    score += _score_vowel_pattern(word)
+    score += _score_rare_letters(word)
 
     if word.endswith(COMMON_ENDINGS):
-        base += 8
+        score += 8
 
     if word in common_words_set:
-        base += 500
+        score += 500
 
-    return base
-
-
-def rank_candidate(word, common_words_set):
-    return score_word(word, common_words_set)
+    return score
 
 
-def build_candidate(word, pattern, common_words_set):
-    return {
-        "word": word,
-        "length": len(word),
-        "pattern": pattern,
-        "score": rank_candidate(word, common_words_set),
-    }
-
-
-def public_candidate(candidate):
-    return {
-        "word": candidate["word"],
-        "pattern": candidate["pattern"],
-        "length": candidate["length"],
-    }
+def _is_consistent_with_mapping(word, cipher_word, mapping):
+    plain_to_cipher = {v: k for k, v in mapping.items()}
+    for cipher_letter, plain_letter in zip(cipher_word.upper(), word.upper()):
+        if cipher_letter in mapping and mapping[cipher_letter] != plain_letter:
+            return False
+        if plain_letter in plain_to_cipher and plain_to_cipher[plain_letter] != cipher_letter:
+            return False
+    return True
 
 
 class PatternDictionary:
@@ -153,23 +111,28 @@ class PatternDictionary:
 
     def load(self, filename, common_words_path=None):
         if common_words_path is None:
-            common_words_path = str(
-                Path(filename).parent / "common_words.txt"
-            )
-        self.common_words = load_common_words(common_words_path)
+            common_words_path = str(Path(filename).parent / "common_words.txt")
 
-        with open(filename, "r") as file:
-            for word in file:
-                word = normalize_word(word)
+        try:
+            with open(common_words_path) as f:
+                self.common_words = {line.strip().upper() for line in f if line.strip()}
+        except FileNotFoundError:
+            self.common_words = set()
 
-                if not filter_short_words(word):
-                    continue
-
-                if not word.isalpha():
+        with open(filename) as file:
+            for line in file:
+                word = line.strip().upper()
+                if not word or not word.isalpha():
                     continue
 
                 pattern = word_pattern(word)
-                candidate = build_candidate(word, pattern, self.common_words)
+                score = _score_word(word, self.common_words)
+                candidate = {
+                    "word": word,
+                    "length": len(word),
+                    "pattern": pattern,
+                    "score": score,
+                }
 
                 if pattern not in self.patterns:
                     self.patterns[pattern] = []
@@ -186,22 +149,27 @@ class PatternDictionary:
                     self.pattern_stats[pattern]["count"] += 1
 
         for pattern in self.patterns:
-            self.patterns[pattern] = rank_candidates(self.patterns[pattern])
+            self.patterns[pattern] = sorted(
+                self.patterns[pattern],
+                key=lambda c: (-c["score"], c["length"], c["word"]),
+            )
 
     def find_matches(self, cipher_word, limit=20, mapping=None):
-        pattern = word_pattern(normalize_word(cipher_word))
+        pattern = word_pattern(cipher_word.strip().upper())
         matches = self.patterns.get(pattern, [])
 
         if mapping:
             matches = [
                 m for m in matches
-                if is_consistent_with_mapping(m["word"], cipher_word, mapping)
+                if _is_consistent_with_mapping(m["word"], cipher_word, mapping)
             ]
 
         if limit is None:
-            return [public_candidate(match) for match in matches]
+            return [{"word": m["word"], "pattern": m["pattern"], "length": m["length"]}
+                    for m in matches]
 
-        return [public_candidate(match) for match in matches[:limit]]
+        return [{"word": m["word"], "pattern": m["pattern"], "length": m["length"]}
+                for m in matches[:limit]]
 
     def get_pattern_stats(self, pattern):
         return self.pattern_stats.get(pattern, {
@@ -209,40 +177,3 @@ class PatternDictionary:
             "length": len(pattern),
             "count": 0,
         })
-
-
-def rank_candidates(candidates):
-    return sorted(
-        candidates,
-        key=lambda candidate: (
-            -candidate["score"],
-            candidate["length"],
-            candidate["word"],
-        ),
-    )
-
-
-def debug_find_matches(dictionary, cipher_word, mapping=None, limit=15):
-    pattern = word_pattern(normalize_word(cipher_word))
-    all_matches = dictionary.patterns.get(pattern, [])
-
-    print(f"Cipher: {cipher_word}")
-    print(f"Pattern: {pattern}")
-    print(f"{len(all_matches)} pattern matches")
-
-    if mapping:
-        after_mapping = [
-            m for m in all_matches
-            if is_consistent_with_mapping(m["word"], cipher_word, mapping)
-        ]
-        print(f"After mapping filter: {len(after_mapping)}")
-        candidates = after_mapping
-    else:
-        candidates = all_matches
-
-    print(f"\nTop ranked candidates:")
-    for m in candidates[:limit]:
-        in_common = " [COMMON]" if m["word"] in dictionary.common_words else ""
-        print(f"  {m['word']:15s}  score={m['score']:4d}{in_common}")
-
-    return [public_candidate(m) for m in candidates[:limit]]
