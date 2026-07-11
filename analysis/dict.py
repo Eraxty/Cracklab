@@ -171,6 +171,34 @@ class PatternDictionary:
         return [{"word": m["word"], "pattern": m["pattern"], "length": m["length"]}
                 for m in matches[:limit]]
 
+    def find_partial_matches(self, pattern, limit=None):
+        results = []
+        pattern = pattern.upper()
+
+        for words in self.patterns.values():
+            for entry in words:
+                word = entry["word"]
+                if len(word) != len(pattern):
+                    continue
+                ok = True
+                
+                for a, b in zip(pattern, word):
+                    if a != "_" and a != b:
+                        ok = False
+                        break
+
+                if ok:
+                    results.append({
+                        "word": word,
+                        "pattern": entry["pattern"],
+                        "length": entry["length"],
+                    })
+
+        if limit is not None:
+            return results[:limit]
+
+        return results
+
     def get_pattern_stats(self, pattern):
         return self.pattern_stats.get(pattern, {
             "pattern": pattern,
