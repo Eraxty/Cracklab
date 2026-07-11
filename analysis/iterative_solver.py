@@ -136,28 +136,6 @@ def generate_candidates(cipher_word, current_mapping, dictionary):
 def _ngram_stream(text):
     return "".join(c for c in text.upper() if c.isalpha() or c == UNKNOWN)
 
-def _score_ngram(stream, size, score, weight,unknown_penalty):
-    total = 0 
-    for i in range(len(stream) -size + 1):
-        gram = stream[i:i+size]
-        if UNKNOWN in gram:
-            total += unknown_penalty
-        else:
-            total += scores.get(gram , unknown_penalty) * weight
-    return total
-
-
-
-
-# UNDER THIS PART AI CODE i geniuenly couldnt make it work i had to resort to it
-#PLZ forgive me 
-
-
-
-
-
-
-
 def _score_ngrams(stream, size, scores, weight, unknown_penalty):
     total = 0
     for i in range(len(stream) - size + 1):
@@ -167,6 +145,14 @@ def _score_ngrams(stream, size, scores, weight, unknown_penalty):
         else:
             total += scores.get(gram, unknown_penalty) * weight
     return total
+
+
+
+# UNDER THIS PART AI CODE i geniuenly couldnt make it work i had to resort to it
+#PLZ forgive me 
+
+
+
 
 
 def _score_word_ngrams(word):

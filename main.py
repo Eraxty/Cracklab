@@ -26,31 +26,9 @@ def _load_dictionary(wordlist_path):
     raise FileNotFoundError(f"No word list found at {wordlist_path} or {FALLBACK_WORDLIST}")
 
 
-def _save_results(mapping, plaintext, score):
+def _save_results(plaintext):
     results_path = ROOT / "results.txt"
-
-    lines = []
-    lines.append("Cipher:")
-    lines.append("Monoalphabetic Substitution")
-    lines.append("")
-    lines.append("Score:")
-    lines.append(f"{score}")
-    lines.append("")
-    lines.append("Mapping")
-    lines.append("")
-    for cipher_letter in sorted(mapping):
-        lines.append(
-            f"{cipher_letter} -> {mapping[cipher_letter]}"
-        )
-    lines.append("")
-    lines.append("Plaintext")
-    lines.append("")
-    lines.append(plaintext)
-    lines.append("")
-    lines.append("=" * 52)
-
-    results_path.write_text("\n".join(lines) + "\n")
-
+    results_path.write_text(plaintext + "\n")
 
 def _parse_args():
     parser = argparse.ArgumentParser(prog="CrackLab", description="Cipher analysis pipeline")
@@ -73,7 +51,6 @@ def main():
 
     cipher_name = classification["cipher"].replace(" Substitution", "")
     print("CrackLab")
-    print(f"File: {Path(args.input_file).name}")
     print(f"Cipher: {cipher_name} ({classification['confidence']}%)")
     print(f"IOC: {report['ioc']:.4f}  Entropy: {report['entropy']:.2f}")
 
@@ -92,7 +69,7 @@ def main():
         mapping = solve(cipher_words, dictionary)
         plaintext = decrypt(cipher_words, mapping)
         score = score_text(plaintext)
-        _save_results(mapping, plaintext, score)
+        _save_results(plaintext)
     else:
         print(f"\nNo solver available for: {classification['cipher']}")
 
