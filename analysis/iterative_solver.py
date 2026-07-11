@@ -1,6 +1,7 @@
 import re
 from collections import Counter
 from dataclasses import dataclass
+from analysis.partial_words import build_remember
 
 from analysis.english_scorer import (
     COMMON_BIGRAMS,
@@ -268,6 +269,10 @@ def score_text(text):
 
 def evaluate_mapping(cipher_words, mapping):
     plaintext = decrypt(cipher_words, mapping)
+    
+    remember = build_remember(cipher_words, plaintext)
+    print(remember)
+    
     return score_plaintext(plaintext), plaintext
 
 
