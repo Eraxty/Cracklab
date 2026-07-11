@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 COMMON_WORDS = {
     "THE", "OF", "TO", "AND", "A", "IN", "IS", "IT", "YOU", "THAT",
     "HE", "WAS", "FOR", "ON", "ARE", "WITH", "AS", "I", "HIS", "THEY",
@@ -64,6 +67,20 @@ COMMON_WORDS = {
     "FILL", "EAST", "WEIGHT", "LANGUAGE", "AMONG",
 }
 
+_common_words_path = Path(__file__).parent.parent / "data" / "common_words.txt"
+if _common_words_path.exists():
+    with open(_common_words_path) as _f:
+        COMMON_SET = {line.strip().upper() for line in _f if line.strip()}
+else:
+    COMMON_SET = set(COMMON_WORDS)
+
+_cleaned_path = Path(__file__).parent.parent / "data" / "cleaned_words.txt"
+if _cleaned_path.exists():
+    with open(_cleaned_path) as _f:
+        WORD_SET = {line.strip().upper() for line in _f if line.strip()}
+else:
+    WORD_SET = COMMON_SET
+
 COMMON_BIGRAMS = {
     "TH": 5, "HE": 5, "IN": 4, "ER": 4, "AN": 4, "RE": 4,
     "ON": 3, "AT": 3, "EN": 3, "ND": 3, "TI": 3, "ES": 3,
@@ -109,12 +126,63 @@ RARE_BIGRAMS = {
     "WZ", "ZW", "VQ", "QV", "VZ", "ZV",
 }
 
-def score_dictionary(text):
-    score = 0
-    for word in text.split():
-        if word in COMMON_WORDS:
-            score += 5 * len(word)
-    return score
+PHRASE_BONUSES = {
+    "OF THE": 20, "IN THE": 20, "TO THE": 20, "AND THE": 20,
+    "FOR THE": 20, "ON THE": 15, "AT THE": 15, "BY THE": 15,
+    "FROM THE": 20, "WITH THE": 20, "THAT THE": 15,
+    "IS A": 15, "IN A": 12, "OF A": 12, "TO A": 12,
+    "AND A": 12, "IT IS": 15, "THAT IS": 15, "THIS IS": 15,
+    "THERE IS": 15, "TO BE": 15, "CAN BE": 12, "WILL BE": 12,
+    "HAS BEEN": 12, "HAVE BEEN": 12, "WOULD BE": 12,
+    "COULD BE": 12, "SHOULD BE": 12, "HOW TO": 12,
+}
+
+
+def _clean_word(word):
+    return re.sub(r"[^A-Z]", "", word.upper())
+
+
+def _score_words(text):
+    words = text.split()
+    dictionary_score = 0
+    unknown_penalty = 0
+    consecutive_bonus = 0
+    valid_count = 0
+    invalid_count = 0
+    prev_valid = False
+
+    for word in words:
+        clean = _clean_word(word)
+        if not clean:
+            continue
+        if clean in COMMON_SET:
+            dictionary_score += 40
+            valid_count += 1
+            if prev_valid:
+                consecutive_bonus += 10
+            prev_valid = True
+        elif clean in WORD_SET:
+            dictionary_score += 15
+            valid_count += 1
+            if prev_valid:
+                consecutive_bonus += 10
+            prev_valid = True
+        elif len(clean) >= 4:
+            unknown_penalty -= 3 * len(clean)
+            invalid_count += 1
+            prev_valid = False
+        else:
+            prev_valid = False
+
+    return dictionary_score, unknown_penalty, consecutive_bonus, valid_count, invalid_count
+
+
+def _score_phrases(text):
+    total = 0
+    for phrase, bonus in PHRASE_BONUSES.items():
+        if phrase in text:
+            total += bonus
+    return total
 
 
 def score_bigrams(text):
@@ -204,17 +272,22 @@ def score_rare_bigrams(text):
             score -= 10
     return score
 
+
 def score_text(text):
     text = text.upper()
 
-    score = 0
-    score += score_dictionary(text)
-    score += score_bigrams(text)
-    score += score_trigrams(text)
-    score += score_quadgrams(text)
-    score += score_frequency(text)
-    score += score_vowels(text)
-    score += score_double_letters(text)
-    score += score_rare_bigrams(text)
+    dictionary_score, unknown_penalty, consecutive_bonus, _, _ = _score_words(text)
+    phrase_bonus = _score_phrases(text)
 
-    return score
+    num_letters = max(1, len([c for c in text if c.isalpha()]))
+    bigrams = round(score_bigrams(text) / num_letters * 10)
+    trigrams = round(score_trigrams(text) / num_letters * 10)
+    quadgrams = round(score_quadgrams(text) / num_letters * 10)
+    frequency = round(score_frequency(text) / num_letters * 10)
+    vowels = score_vowels(text)
+    doubles = score_double_letters(text)
+    rare = score_rare_bigrams(text)
+
+    return (dictionary_score + unknown_penalty + consecutive_bonus + phrase_bonus
+            + bigrams + trigrams + quadgrams
+            + frequency + vowels + doubles + rare)

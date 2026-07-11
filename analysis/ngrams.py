@@ -5,7 +5,6 @@ CHARS = string.ascii_uppercase
 def count_ngrams(text: str, n: int):
     text = text.upper()
 
-    # Remove unnecessary characters
     clean_text = "".join(char for char in text if char in CHARS)
 
     ngrams = {}

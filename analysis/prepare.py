@@ -1,5 +1,6 @@
 from collections import Counter
 
+
 def prepare_words(cipher_words, dictionary):
     counts = Counter(cipher_words)
     words = []
@@ -21,15 +22,3 @@ def prepare_words(cipher_words, dictionary):
         )
     )
     return words
-
-def print_prepared(words):
-    print("Prepared Words\n")
-    print("WORD\tLEN\tCOUNT\tCANDIDATES")
-
-    for item in words:
-        print(
-            f"{item['word']}\t"
-            f"{item['length']}\t"
-            f"{item['count']}\t"
-            f"{item['candidate_count']}"
-        )
