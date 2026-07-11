@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 from analysis.dict import PatternDictionary
+from analysis.evaluator import evaluate_candidate
 
 dictionary = PatternDictionary()
 dictionary.load("data/cleaned_words.txt")
