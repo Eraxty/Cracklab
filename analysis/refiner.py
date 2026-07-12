@@ -41,6 +41,8 @@ print(cipher)
 print(pattern)
 
 matches = dictionary.find_partial_matches(pattern, limit=10)
+scored = []
+current_mapping = {}
 
 best_score = float("-inf")
 best_word = None
@@ -61,7 +63,14 @@ for m in matches:
     words = plaintext.split()
     words[crack.index(cipher)] = candidate
     plaintext = " ".join(words)
+
     score = count_improvement(result_text, plaintext)
+    scored.append((
+        score,
+        plaintext,
+        mapping,
+        candidate,
+    ))
     print(f"{candidate:10} {score}")
     if score > best_score:
         best_score = score
@@ -69,9 +78,15 @@ for m in matches:
         best_plaintext = plaintext
         best_mapping = mapping
 
+scored.sort(
+    key=lambda x: x[0],
+    reverse=True,
+)
+best = scored[:5]
 print()
-print("winner:", best_word)
-print("score:", best_score)
-print(best_mapping)
-print()
-print(best_plaintext)
+
+for score, plaintext, mapping, candidate in best:
+    print(candidate)
+    print(score)
+    print(mapping)
+    print()
