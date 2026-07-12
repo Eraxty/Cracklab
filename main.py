@@ -72,7 +72,7 @@ def main():
         _save_results(plaintext)
     else:
         print(f"\nNo solver available for: {classification['cipher']}")
-
+    
     return 0
 
 if __name__ == "__main__":
