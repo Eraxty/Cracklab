@@ -27,20 +27,17 @@ def build_filtered(result_text):
     )
     return filtered
 
-def count_improvement(old_text, new_text):
-    score = 0
-    old_words = old_text.split()
-    new_words = new_text.split()
-    for old, new in zip(old_words, new_words):
-        score += old.count("_") - new.count("_")
-        if "_" not in new and new in WORD_SET:
-            score += 100
-    return score
 
-filtered = build_filtered(result_text)
 current_mapping = {}
 
-for cipher, pattern in filtered:
+while True:
+    filtered = build_filtered(result_text)
+
+    if not filtered:
+        break
+
+    cipher, pattern = filtered[0]
+
     print(cipher)
     print(pattern)
 
@@ -62,27 +59,35 @@ for cipher, pattern in filtered:
             pattern,
             candidate,
         )
+
         words = plaintext.split()
         words[crack.index(cipher)] = candidate
         plaintext = " ".join(words)
+
         score = count_improvement(result_text, plaintext)
+
         scored.append((
             score,
             plaintext,
             mapping,
             candidate,
         ))
+
         print(f"{candidate:10} {score}")
+
         if score > best_score:
             best_score = score
             best_word = candidate
             best_plaintext = plaintext
             best_mapping = mapping
+
     scored.sort(
         key=lambda x: x[0],
         reverse=True,
     )
+
     best = scored[:5]
+
     print()
 
     for score, plaintext, mapping, candidate in best:
@@ -91,6 +96,13 @@ for cipher, pattern in filtered:
         print(mapping)
         print()
 
-    if best_mapping is not None:
-        current_mapping = best_mapping.copy()
-        result_text = best_plaintext
+    if best_mapping is None:
+        break
+
+    if best_score <= 0:
+        break
+
+    current_mapping = best_mapping.copy()
+    result_text = best_plaintext
+
+(ROOT / "final_result.txt").write_text(result_text)
