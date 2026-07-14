@@ -9,9 +9,17 @@ def build_mapping(cipher_word, old_pattern, candidate):
 
     return mapping
 
+def is_valid_mapping(mapping):
+    values = list(mapping.values())
+    return len(values) == len(set(values))
+
 def merge_mapping(current_mapping, new_mapping):
     merged = current_mapping.copy()
     merged.update(new_mapping)
+
+    if not is_valid_mapping(merged):
+        return None
+
     return merged
 
 def evaluate_candidate(
@@ -30,6 +38,10 @@ def evaluate_candidate(
         current_mapping,
         new_mapping,
     )
+
+    if merged_mapping is None:
+        return None, None
+        
     plaintext = decrypt(
         cipher_words,
         merged_mapping,

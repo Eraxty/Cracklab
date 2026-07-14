@@ -99,6 +99,8 @@ while True:
             pattern,
             candidate,
         )
+        if plaintext is None:
+            continue
 
         words = plaintext.split()
         words[crack.index(cipher)] = candidate
