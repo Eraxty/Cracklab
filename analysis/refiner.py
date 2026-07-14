@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from analysis.dict import PatternDictionary
 from analysis.evaluator import evaluate_candidate
-from analysis.english_scorer import (
+from analysis.eng_words import (
     WORD_SET,
     COMMON_WORDS,
     COMMON_BIGRAMS,
@@ -11,9 +11,8 @@ from analysis.english_scorer import (
 )
 
 dictionary = PatternDictionary()
-dictionary.load("data/cleaned_words.txt")
-
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
+dictionary.load(ROOT / "data" / "cleaned_words.txt")
 
 crack_text = (ROOT / "crack.txt").read_text(encoding="utf-8")
 result_text = (ROOT / "results.txt").read_text(encoding="utf-8")

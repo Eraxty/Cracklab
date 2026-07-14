@@ -1,4 +1,4 @@
-from reference.english import ENGLISH
+from refrence.english import ENGLISH
 
 def score_language(letter_frequency):
     score = 0

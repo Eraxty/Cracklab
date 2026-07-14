@@ -1,68 +1,36 @@
 import re
 from collections import Counter
 from dataclasses import dataclass
-from analysis.partial_words import build_remember
 
-from analysis.english_scorer import (
+from analysis.eng_words import (
+    BI_WEIGHT,
     COMMON_BIGRAMS,
     COMMON_LETTERS,
     COMMON_QUADGRAMS,
     COMMON_SET,
     COMMON_TRIGRAMS,
+    COMMON_WORD_WEIGHT,
+    DICTIONARY_WORD_WEIGHT,
+    ENGLISH_FREQUENCIES,
+    LETTER_FREQUENCY_WEIGHT,
     RARE_BIGRAMS,
+    RARE_BIGRAM_PENALTY,
+    SHORT_UNKNOWN_WORD_PENALTY,
+    TRI_WEIGHT,
+    UNKNOWN,
+    UNKNOWN_BI_PENALTY,
+    UNKNOWN_QUAD_PENALTY,
+    UNKNOWN_TRI_PENALTY,
+    UNKNOWN_WORD_LETTER_PENALTY,
     WORD_SET,
+    WORD_UNDERSCORE_PENALTY,
+    WORD_UNKNOWN_PENALTY,
+    WORST_WORD_COUNT,
+    QUAD_WEIGHT,
 )
+from analysis.partial_words import build_remember
 from analysis.mapping import create_mapping
 from analysis.patterns import word_pattern
-
-UNKNOWN = "_"
-
-QUAD_WEIGHT = 80
-TRI_WEIGHT = 24
-BI_WEIGHT = 8
-COMMON_WORD_WEIGHT = 90
-DICTIONARY_WORD_WEIGHT = 35
-LETTER_FREQUENCY_WEIGHT = 6
-
-UNKNOWN_QUAD_PENALTY = -35
-UNKNOWN_TRI_PENALTY = -10
-UNKNOWN_BI_PENALTY = -3
-UNKNOWN_WORD_LETTER_PENALTY = -2
-WORD_UNDERSCORE_PENALTY = -35
-SHORT_UNKNOWN_WORD_PENALTY = -180
-WORD_UNKNOWN_PENALTY = -45
-RARE_BIGRAM_PENALTY = -35
-WORST_WORD_COUNT = 20
-
-ENGLISH_FREQUENCIES = {
-    "E": 12.70,
-    "T": 9.06,
-    "A": 8.17,
-    "O": 7.51,
-    "I": 6.97,
-    "N": 6.75,
-    "S": 6.33,
-    "H": 6.09,
-    "R": 5.99,
-    "D": 4.25,
-    "L": 4.03,
-    "C": 2.78,
-    "U": 2.76,
-    "M": 2.41,
-    "W": 2.36,
-    "F": 2.23,
-    "G": 2.02,
-    "Y": 1.97,
-    "P": 1.93,
-    "B": 1.49,
-    "V": 0.98,
-    "K": 0.77,
-    "J": 0.15,
-    "X": 0.15,
-    "Q": 0.10,
-    "Z": 0.07,
-}
-
 
 @dataclass(frozen=True)
 class CandidateEvaluation:
