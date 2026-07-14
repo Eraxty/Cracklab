@@ -130,3 +130,40 @@ ENGLISH_FREQUENCIES = {
     "Q": 0.10,
     "Z": 0.07,
 }
+
+ENGLISH = {
+    "letters": ENGLISH_FREQUENCIES,
+    "bigrams": [
+        "TH", "HE", "IN", "ER", "AN",
+        "RE", "ON", "AT", "EN", "ND",
+        "TI", "ES", "OR", "TE", "OF",
+        "ED", "IS", "IT", "AL", "AR",
+        "ST", "TO", "NT", "NG", "SE",
+    ],
+    "trigrams": [
+        "THE", "ING", "AND", "HER", "ERE",
+        "ENT", "THA", "NTH", "WAS", "ETH",
+        "FOR", "DTH", "HAT", "ION", "TIO",
+        "VER", "TER", "HES", "ATI", "ALL",
+    ],
+    "double_letters": [
+        "LL", "EE", "SS", "OO", "TT",
+        "FF", "RR", "NN", "PP", "CC",
+    ],
+    "one_letter_words": [
+        "A",
+        "I",
+    ],
+    "common_two_letter_words": [
+        "OF", "TO", "IN", "IT", "IS",
+        "BE", "AS", "AT", "SO", "WE",
+        "HE", "BY", "OR", "ON", "DO",
+        "IF", "ME", "MY", "UP", "AN",
+    ],
+    "common_three_letter_words": [
+        "THE", "AND", "FOR", "ARE", "BUT",
+        "NOT", "YOU", "ALL", "ANY", "CAN",
+        "HAD", "HER", "WAS", "ONE", "OUR",
+        "OUT", "DAY", "GET", "HAS", "HIM",
+    ],
+}
