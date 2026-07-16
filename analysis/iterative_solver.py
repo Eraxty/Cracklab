@@ -12,6 +12,7 @@ from analysis.eng_words import (
     COMMON_WORD_WEIGHT,
     DICTIONARY_WORD_WEIGHT,
     ENGLISH_FREQUENCIES,
+    IMPOSSIBLE_BIGRAMS,
     LETTER_FREQUENCY_WEIGHT,
     RARE_BIGRAMS,
     RARE_BIGRAM_PENALTY,
@@ -32,6 +33,10 @@ from analysis.partial_words import build_remember
 from analysis.mapping import create_mapping
 from analysis.patterns import word_pattern
 
+
+MAX_CANDIDATES_PER_WORD = 20
+
+
 @dataclass(frozen=True)
 class CandidateEvaluation:
     cipher_word: str
@@ -40,6 +45,19 @@ class CandidateEvaluation:
     mapping: dict
     plaintext: str
     score: int
+    improvement: int
+    new_valid_words: int
+    new_common_words: int
+    new_valid_distinct: int
+    more_complete_words: int
+    letters_revealed: int
+    common_bigrams: int
+    common_trigrams: int
+    common_quadgrams: int
+    broken_valid_words: int
+    new_invalid_words: int
+    rare_bigrams: int
+    impossible_bigrams: int
 
 
 @dataclass(frozen=True)
@@ -88,12 +106,19 @@ def _merge_replacing_word(current_mapping, cipher_word, candidate_word):
     return merged
 
 def generate_candidates(cipher_word, current_mapping, dictionary):
-    pattern = word_pattern(cipher_word.upper())
-    matches = sorted(dictionary.patterns.get(pattern, []), key=lambda match: match["word"])
+    cipher_word = cipher_word.upper()
+    pattern = word_pattern(cipher_word)
+    matches = dictionary.find_matches(
+        cipher_word,
+        limit=MAX_CANDIDATES_PER_WORD,
+        mapping=current_mapping,
+    )
     candidates = []
 
     for match in matches:
         candidate_word = match["word"].upper()
+        if word_pattern(candidate_word) != pattern:
+            continue
         merged = _merge_replacing_word(current_mapping, cipher_word, candidate_word)
         if merged is None:
             continue
@@ -237,15 +262,148 @@ def score_text(text):
 
 def evaluate_mapping(cipher_words, mapping):
     plaintext = decrypt(cipher_words, mapping)
-    
-    remember = build_remember(cipher_words, plaintext)
-    print(remember)
-    
     return score_plaintext(plaintext), plaintext
 
 
-def evaluate_candidate(cipher_words, cipher_word, old_candidate, candidate_word, candidate_mapping):
+@dataclass(frozen=True)
+class PlaintextStats:
+    valid_words: tuple
+    common_words: tuple
+    known_letters: int
+    common_bigrams: int
+    common_trigrams: int
+    common_quadgrams: int
+    rare_bigrams: int
+    impossible_bigrams: int
+
+
+def _count_common_ngrams(words, size, scores):
+    return sum(
+        1
+        for word in words
+        for index in range(len(word) - size + 1)
+        if UNKNOWN not in word[index:index + size]
+        and word[index:index + size] in scores
+    )
+
+
+def _count_bigrams(words, candidates):
+    return sum(
+        1
+        for word in words
+        for index in range(len(word) - 1)
+        if UNKNOWN not in word[index:index + 2]
+        and word[index:index + 2] in candidates
+    )
+
+
+def _plaintext_stats(plaintext):
+    words = plaintext.upper().split()
+    valid_words = tuple(
+        word for word in words
+        if UNKNOWN not in word and word in WORD_SET
+    )
+    common_words = tuple(
+        word for word in words
+        if UNKNOWN not in word and word in COMMON_SET
+    )
+
+    return PlaintextStats(
+        valid_words=valid_words,
+        common_words=common_words,
+        known_letters=sum(
+            1 for word in words for letter in word if letter != UNKNOWN
+        ),
+        common_bigrams=_count_common_ngrams(words, 2, COMMON_BIGRAMS),
+        common_trigrams=_count_common_ngrams(words, 3, COMMON_TRIGRAMS),
+        common_quadgrams=_count_common_ngrams(words, 4, COMMON_QUADGRAMS),
+        rare_bigrams=_count_bigrams(words, RARE_BIGRAMS),
+        impossible_bigrams=_count_bigrams(words, IMPOSSIBLE_BIGRAMS),
+    )
+
+
+def _global_improvement(old_plaintext, new_plaintext, old_stats=None):
+    old_words = old_plaintext.upper().split()
+    new_words = new_plaintext.upper().split()
+    if old_stats is None:
+        old_stats = _plaintext_stats(old_plaintext)
+    new_stats = _plaintext_stats(new_plaintext)
+
+    new_valid_words = sum(
+        old_word not in WORD_SET and new_word in WORD_SET
+        for old_word, new_word in zip(old_words, new_words)
+        if UNKNOWN not in new_word
+    )
+    new_common_words = sum(
+        old_word not in COMMON_SET and new_word in COMMON_SET
+        for old_word, new_word in zip(old_words, new_words)
+        if UNKNOWN not in new_word
+    )
+    new_valid_distinct = len(
+        set(new_stats.valid_words) - set(old_stats.valid_words)
+    )
+    more_complete_words = sum(
+        new_word.count(UNKNOWN) < old_word.count(UNKNOWN)
+        for old_word, new_word in zip(old_words, new_words)
+        if new_word not in WORD_SET
+    )
+    broken_valid_words = sum(
+        old_word in WORD_SET and new_word not in WORD_SET
+        for old_word, new_word in zip(old_words, new_words)
+    )
+    new_invalid_words = sum(
+        UNKNOWN not in new_word
+        and new_word not in WORD_SET
+        and UNKNOWN in old_word
+        for old_word, new_word in zip(old_words, new_words)
+    )
+
+    delta = {
+        "new_valid_words": new_valid_words,
+        "new_common_words": new_common_words,
+        "new_valid_distinct": new_valid_distinct,
+        "more_complete_words": more_complete_words,
+        "letters_revealed": new_stats.known_letters - old_stats.known_letters,
+        "common_bigrams": new_stats.common_bigrams - old_stats.common_bigrams,
+        "common_trigrams": new_stats.common_trigrams - old_stats.common_trigrams,
+        "common_quadgrams": new_stats.common_quadgrams - old_stats.common_quadgrams,
+        "broken_valid_words": broken_valid_words,
+        "new_invalid_words": new_invalid_words,
+        "rare_bigrams": new_stats.rare_bigrams - old_stats.rare_bigrams,
+        "impossible_bigrams": (
+            new_stats.impossible_bigrams - old_stats.impossible_bigrams
+        ),
+    }
+    delta["score"] = (
+        delta["new_common_words"] * 1000
+        + delta["new_valid_words"] * 350
+        + delta["new_valid_distinct"] * 250
+        + delta["more_complete_words"] * 15
+        + delta["letters_revealed"]
+        + delta["common_bigrams"] * 8
+        + delta["common_trigrams"] * 20
+        + delta["common_quadgrams"] * 45
+        - delta["broken_valid_words"] * 1200
+        - delta["new_invalid_words"] * 250
+        - delta["rare_bigrams"] * 30
+        - delta["impossible_bigrams"] * 300
+    )
+    return delta
+
+
+def evaluate_candidate(
+    cipher_words,
+    cipher_word,
+    old_candidate,
+    candidate_word,
+    candidate_mapping,
+    current_plaintext=None,
+    current_stats=None,
+):
     score, plaintext = evaluate_mapping(cipher_words, candidate_mapping)
+    if current_plaintext is None:
+        _, current_plaintext = evaluate_mapping(cipher_words, {})
+    delta = _global_improvement(current_plaintext, plaintext, current_stats)
     return CandidateEvaluation(
         cipher_word=cipher_word,
         old_candidate=old_candidate,
@@ -253,6 +411,19 @@ def evaluate_candidate(cipher_words, cipher_word, old_candidate, candidate_word,
         mapping=candidate_mapping,
         plaintext=plaintext,
         score=score,
+        improvement=delta["score"],
+        new_valid_words=delta["new_valid_words"],
+        new_common_words=delta["new_common_words"],
+        new_valid_distinct=delta["new_valid_distinct"],
+        more_complete_words=delta["more_complete_words"],
+        letters_revealed=delta["letters_revealed"],
+        common_bigrams=delta["common_bigrams"],
+        common_trigrams=delta["common_trigrams"],
+        common_quadgrams=delta["common_quadgrams"],
+        broken_valid_words=delta["broken_valid_words"],
+        new_invalid_words=delta["new_invalid_words"],
+        rare_bigrams=delta["rare_bigrams"],
+        impossible_bigrams=delta["impossible_bigrams"],
     )
 
 
@@ -285,23 +456,33 @@ def find_worst_words(cipher_words, plaintext, dictionary, limit=WORST_WORD_COUNT
 
     ranked = sorted(
         scored_words,
-        key=lambda item: (item.score, item.cipher_word, item.plaintext_word, item.index),
+        key=lambda item: (
+            UNKNOWN not in item.plaintext_word,
+            item.score,
+            item.cipher_word,
+            item.plaintext_word,
+            item.index,
+        ),
     )
     return ranked[:limit]
 
 
 def choose_best_candidate(cipher_words, mapping, dictionary, weak_words, current_score):
     best = None
-    best_score = current_score
+    _, current_plaintext = evaluate_mapping(cipher_words, mapping)
+    current_stats = _plaintext_stats(current_plaintext)
+    best_improvement = 0
     evaluated_cipher_words = set()
 
     for weak_word in weak_words:
         cipher_word = weak_word.cipher_word
+
         if cipher_word in evaluated_cipher_words:
             continue
-        evaluated_cipher_words.add(cipher_word)
 
+        evaluated_cipher_words.add(cipher_word)
         old_candidate = weak_word.plaintext_word
+
         for candidate_word, candidate_mapping in generate_candidates(
             cipher_word, mapping, dictionary
         ):
@@ -311,14 +492,17 @@ def choose_best_candidate(cipher_words, mapping, dictionary, weak_words, current
                 old_candidate,
                 candidate_word,
                 candidate_mapping,
+                current_plaintext,
+                current_stats,
             )
 
-            if evaluation.score > best_score:
+            print(f"{cipher_word} = {candidate_word}")
+
+            if evaluation.improvement > best_improvement:
                 best = evaluation
-                best_score = evaluation.score
+                best_improvement = evaluation.improvement
 
     return best
-
 
 def solve_iteration(cipher_words, mapping, dictionary):
     current_score, plaintext = evaluate_mapping(cipher_words, mapping)
@@ -344,11 +528,9 @@ def _print_iteration(iteration, current_score, weak_words, improvement, mapping)
     if improvement is None:
         print("stop")
     else:
-        gain = improvement.score - current_score
         print(
-            f"+{gain}  {improvement.cipher_word}: "
-            f"{improvement.old_candidate} -> {improvement.new_candidate}  "
-            f"{current_score} -> {improvement.score}"
+            f"+{improvement.improvement}  {improvement.cipher_word}: "
+            f"{improvement.old_candidate} -> {improvement.new_candidate}"
         )
 
     print(f"map: {_known_mapping_count(displayed_mapping)}\n")
