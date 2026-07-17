@@ -61,5 +61,5 @@ def generate_report(text, dictionary):
         "entropy": _shannon_entropy(frequency),
         "patterns": _word_patterns(normalized),
     }
-    report["classification"] = classify(report)
+    report["classification"] = classify(report, text)
     return report

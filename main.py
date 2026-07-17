@@ -6,6 +6,7 @@ from analysis.dict import PatternDictionary
 from analysis.iterative_solver import solve, decrypt, score_text
 from analysis.report import generate_report
 from caesar import crack as crack_caesar
+from base import solve as solve_base
 
 ROOT = Path(__file__).resolve().parent
 WORDLIST_FILE = ROOT / "data" / "cleaned_words.txt"
@@ -69,7 +70,8 @@ def main():
         print(f"{gram} {count}")
 
     print()
-
+    
+    decoded, encoding = solve_base(text)
     if classification["cipher"] == "Monoalphabetic Substitution":
         cipher_words = re.findall(r"[A-Z]+", text.upper())
         mapping = solve(cipher_words, dictionary)
@@ -79,6 +81,13 @@ def main():
         print("\nDecrypted:")
         print(plaintext)
         print(f"\nScore: {score}")
+
+    
+    elif decoded:
+        _save_results(decoded)
+        print(f"\nEncoding: {encoding}")
+        print("\nDecoded:")
+        print(decoded)
 
     elif classification["cipher"] == "Caesar Cipher":
         plaintext, shift = crack_caesar(text)

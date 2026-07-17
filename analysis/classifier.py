@@ -1,118 +1,68 @@
-def _num(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-def _add(scores, evidence, note, **points):
-    for cipher, value in points.items():
-        scores[cipher] += value
-    if note and note not in evidence:
-        evidence.append(note)
-
-def _frequency_peak(frequency):
-    if not isinstance(frequency, dict) or not frequency:
-        return None
-
-    percents = []
-    for data in frequency.values():
-        if isinstance(data, dict):
-            percent = _num(data.get("percent"))
-            if percent is not None:
-                percents.append(percent)
-    return max(percents) if percents else None
-
-def _bigram_peak(bigrams):
-    if not isinstance(bigrams, dict) or not bigrams:
-        return None
-    counts = [count for count in bigrams.values() if isinstance(count, int) and count > 0]
-    if not counts:
-        return None
-    total = sum(counts)
-    return max(counts) / total if total else None
-
-def _patterns_present(patterns):
-    if isinstance(patterns, dict):
-        if not patterns:
-            return False
-        if any(isinstance(value, dict) and value.get("count", 0) > 1 for value in patterns.values()):
-            return True
-        return True
-    return bool(patterns)
+from base import decode_base32, decode_base64
 
 
-def _confidence_from_scores(scores, cipher):
-    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
-    top_score = scores[cipher]
-    runner_up = next((score for name, score in ranked if name != cipher), 0)
-    margin = max(0, top_score - runner_up)
-    confidence = 55 + margin * 2 + max(0, top_score - 20) * 0.5
-    return max(0, min(99, int(round(confidence))))
+def classify(report, text):
+    if decode_base32(text):
+        return {
+            "cipher": "Base32",
+            "confidence": 99,
+        }
 
+    if decode_base64(text):
+        return {
+            "cipher": "Base64",
+            "confidence": 99,
+        }
 
-def classify(report):
+    ioc = report["ioc"]
+    entropy = report["entropy"]
+    frequency = report["frequency"]
+    bigrams = report["bigrams"]
+    patterns = report["patterns"]
+
     scores = {
         "substitution": 0,
         "caesar": 0,
-        "vigenere": 0,
-        "unknown": 8,
     }
-    evidence = []
 
-    ioc = _num(report.get("ioc"))
-    entropy = _num(report.get("entropy"))
-    frequency = report.get("frequency")
-    bigrams = report.get("bigrams")
-    patterns = report.get("patterns")
+    if ioc >= 0.06:
+        scores["substitution"] += 24
+        scores["caesar"] += 18
+    elif ioc >= 0.048:
+        scores["substitution"] += 15
+        scores["caesar"] += 12
 
-    # High IOC monoalphabetic cipher.
-    if ioc is not None:
-        if ioc >= 0.06:
-            _add(scores, evidence, "High Index of Coincidence", substitution=24, caesar=18)
-        elif ioc >= 0.048:
-            _add(scores, evidence, "Moderate Index of Coincidence", substitution=15, caesar=12, vigenere=4)
-        else:
-            _add(scores, evidence, "Low Index of Coincidence", vigenere=20, unknown=6)
+    if entropy <= 4.2:
+        scores["substitution"] += 12
+        scores["caesar"] += 10
 
-    if entropy is not None:
-        if entropy <= 4.2:
-            _add(scores, evidence, "Letter entropy resembles English", substitution=12, caesar=10)
-        elif entropy >= 4.5:
-            _add(scores, evidence, "Flattened letter entropy", vigenere=18, unknown=4)
-        else:
-            _add(scores, evidence, "Midrange letter entropy", substitution=4, caesar=4, vigenere=4)
+    if frequency:
+        peak = max(data["percent"] for data in frequency.values())
 
-    peak = _frequency_peak(frequency)
-    if peak is not None:
         if peak >= 11:
-            _add(scores, evidence, "Letter frequencies resemble English", substitution=14, caesar=12)
-        elif peak <= 8:
-            _add(scores, evidence, "Flattened letter frequencies", vigenere=14, unknown=4)
+            scores["substitution"] += 14
+            scores["caesar"] += 12
 
-    bigram_peak = _bigram_peak(bigrams)
-    if bigram_peak is not None:
+    if bigrams:
+        counts = list(bigrams.values())
+        bigram_peak = max(counts) / sum(counts)
+
         if bigram_peak >= 0.08:
-            _add(scores, evidence, "Repeated digram structure preserved", substitution=8, caesar=6)
-        elif bigram_peak <= 0.05:
-            _add(scores, evidence, "Bigram distribution is diffuse", vigenere=8)
+            scores["substitution"] += 8
+            scores["caesar"] += 6
 
-    if _patterns_present(patterns):
-        _add(scores, evidence, "Repeated word patterns preserved", substitution=10, caesar=10)
+    if patterns:
+        scores["substitution"] += 10
+        scores["caesar"] += 10
 
-    if max(scores["substitution"], scores["caesar"], scores["vigenere"]) < 20:
-        scores["unknown"] += 12
+    cipher = max(scores, key=scores.get)
 
-    priority = {"unknown": 3, "substitution": 2, "caesar": 1, "vigenere": 0}
-    cipher = max(scores, key=lambda name: (scores[name], priority[name]))
+    names = {
+        "substitution": "Monoalphabetic Substitution",
+        "caesar": "Caesar Cipher",
+    }
 
     return {
-        "cipher": {
-            "substitution": "Monoalphabetic Substitution",
-            "caesar": "Caesar Cipher",
-            "vigenere": "Vigenère Cipher",
-            "unknown": "Unknown",
-        }[cipher],
-        "confidence": _confidence_from_scores(scores, cipher),
-        "score": scores,
-        "evidence": evidence,
+        "cipher": names[cipher],
+        "confidence": min(99, 55 + scores[cipher]),
     }
