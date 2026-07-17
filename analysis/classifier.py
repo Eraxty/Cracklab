@@ -1,4 +1,5 @@
 from base import decode_base32, decode_base64
+from morse_more import decode_morse, decode_binary, decode_hex
 
 
 def classify(report, text):
@@ -12,6 +13,21 @@ def classify(report, text):
         return {
             "cipher": "Base64",
             "confidence": 99,
+        }
+    
+    if decode_morse(text):
+        return {"cipher":"Morse",
+                "confidence": 99
+        }
+    
+    if decode_binary(text):
+        return {"cipher": "Binary",
+                "confidence":99
+        }
+
+    if decode_hex(text):
+        return {"cipher": "Hex",
+                "confidence":99
         }
 
     ioc = report["ioc"]

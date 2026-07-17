@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import readline
 from crypto import generate_key, encrypt, decrypt
 
 def main():

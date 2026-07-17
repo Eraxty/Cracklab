@@ -1,12 +1,14 @@
 from pathlib import Path
 import re
 import sys
+import readline
 
 from analysis.dict import PatternDictionary
 from analysis.iterative_solver import solve, decrypt, score_text
 from analysis.report import generate_report
 from caesar import crack as crack_caesar
 from base import solve as solve_base
+from morse_more import decode_morse, decode_binary, decode_hex
 
 ROOT = Path(__file__).resolve().parent
 WORDLIST_FILE = ROOT / "data" / "cleaned_words.txt"
@@ -95,6 +97,24 @@ def main():
         print("\nDecrypted:")
         print(plaintext)
         print(f"\nShift: {shift}")
+
+    elif classification["cipher"] == "Morse":
+        plaintext = decode_morse(text)
+        _save_results(plaintext)
+        print("\nDecoded:")
+        print(plaintext)
+
+    elif classification["cipher"] == "Binary":
+        plaintext = decode_binary(text)
+        _save_results(plaintext)
+        print("\nDecoded:")
+        print(plaintext)
+
+    elif classification["cipher"] == "Hex":
+        plaintext = decode_hex(text)
+        _save_results(plaintext)
+        print("\nDecoded:")
+        print(plaintext)
 
     else:
         print(f"\nNo solver available for: {classification['cipher']}")
