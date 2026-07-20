@@ -1,6 +1,6 @@
-from base import decode_base32, decode_base64
-from morse_more import decode_morse, decode_binary, decode_hex
+from encoding.base import decode_base32, decode_base64
 
+from encoding.morse_more import decode_morse, decode_binary, decode_hex
 
 def classify(report, text):
     if decode_base32(text):

@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import readline
-from crypto import generate_key, encrypt, decrypt
+from ciphers.crypto import generate_key, encrypt, decrypt
 
 def main():
     while True:
