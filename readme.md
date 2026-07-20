@@ -2,7 +2,7 @@
 
 this is a tool for decrypting and analyzing ciphers
 
-## Cracks
+## Supported Ciphers & Encodings
 - Monoalphabetic substitution cipher cracking
 - Caesar cipher
 - Base64 decoding
@@ -21,6 +21,16 @@ this is a tool for decrypting and analyzing ciphers
 - Pattern and dictionary matching
 - English text scoring
 - Key-based encryption and decryption
+
+## How it works 
+1) tries to identify the type of cipher or encoding.
+
+2) Simple encodings such as Base64, Base32, Hex, Binary, and Morse are decoded directly.
+
+3) For Caesar ciphers, it tries possible shifts and scores the results based on how closely they resemble English.
+
+4) For monoalphabetic substitution ciphers it uses an iterative solver.
+
 
 ## Usage
 
@@ -87,5 +97,8 @@ Install any project dependencies using:
 ```bash
 pip install -r requirements.txt
 ```
-## Use of ai
-Ai was used in making iterative solver cuz i couldnt figure it out,even ai couldnt figure it out it took hours, Ai was also used in like small stuffs for making life easier like making dictionaries for words the the data and stuff like that 
+## Use of AI
+
+AI was used while making the iterative solver because I couldn't figure it out, Even with AI, it took hours of testing and changing the approach before it finally worked.
+
+AI was also used for smaller things that made development easier, like generating word dictionaries, test data, and helping debug parts of the project.
