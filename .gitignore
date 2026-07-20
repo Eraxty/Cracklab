@@ -16,5 +16,7 @@ env/
 .DS_Store
 Thumbs.db
 
-results.txt
-test.py
+# PyInstaller
+build/
+dist/
+*.spec
