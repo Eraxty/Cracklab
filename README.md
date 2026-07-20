@@ -55,7 +55,17 @@ HELLO WORLD
 ```
 
 
-CrackLab will analyze the input, detect its likely type, and run the appropriate decoder or solver.
+It will analyze the input, detect its likely type, and run the appropriate decoder or solver.
+
+
+## Release
+
+The release is intended for:
+
+```text
+Architecture: x86_64
+OS: Arch Linux
+```
 
 
 ## Screenshots
