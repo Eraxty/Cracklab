@@ -7,6 +7,7 @@ from analysis.dict import PatternDictionary
 from analysis.iterative_solver import solve, decrypt, score_text
 from analysis.report import generate_report
 from ciphers.caesar import crack as crack_caesar
+from ciphers.vigenere import solve as crack_vigenere
 from encoding.base import solve as solve_base
 from encoding.morse_more import decode_morse, decode_binary, decode_hex
 
@@ -74,15 +75,28 @@ def main():
     print()
     
     decoded, encoding = solve_base(text)
+
     if classification["cipher"] == "Monoalphabetic Substitution":
         cipher_words = re.findall(r"[A-Z]+", text.upper())
         mapping = solve(cipher_words, dictionary)
-        plaintext = decrypt(cipher_words, mapping)
-        score = score_text(plaintext)
-        _save_results(plaintext)
-        print("\nDecrypted:")
-        print(plaintext)
-        print(f"\nScore: {score}")
+        mono_plain = decrypt(cipher_words, mapping)
+        mono_score = score_text(mono_plain)
+
+        vig_result = crack_vigenere(text)
+        vig_plain = vig_result["plaintext"]
+        vig_score = score_text(vig_plain)
+
+        if vig_score > mono_score:
+            _save_results(vig_plain)
+            print("\nDecrypted (Vigenere):")
+            print(vig_plain)
+            print(f"\nKey: {vig_result['key']}")
+        
+        else:
+            _save_results(mono_plain)
+            print("\nDecrypted:")
+            print(mono_plain)
+            print(f"\nScore: {mono_score}")
 
     
     elif decoded:
@@ -97,6 +111,15 @@ def main():
         print("\nDecrypted:")
         print(plaintext)
         print(f"\nShift: {shift}")
+
+    elif classification["cipher"] == "Vigenere Cipher":
+        result = crack_vigenere(text)
+        plaintext = result["plaintext"]
+        key = result["key"]
+        _save_results(plaintext)
+        print("\nDecrypted:")
+        print(plaintext)
+        print(f"\nKey: {key}")
 
     elif classification["cipher"] == "Morse":
         plaintext = decode_morse(text)

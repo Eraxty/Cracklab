@@ -39,18 +39,30 @@ def classify(report, text):
     scores = {
         "substitution": 0,
         "caesar": 0,
+        "vigenere": 0,
     }
 
     if ioc >= 0.06:
         scores["substitution"] += 24
         scores["caesar"] += 18
-    elif ioc >= 0.048:
+    elif ioc >= 0.055:
         scores["substitution"] += 15
         scores["caesar"] += 12
+    elif ioc >= 0.045:
+        scores["substitution"] += 6
+        scores["caesar"] += 5
+        scores["vigenere"] += 8
+    elif ioc >= 0.038:
+        scores["vigenere"] += 18
 
-    if entropy <= 4.2:
+    if entropy <= 4.0:
         scores["substitution"] += 12
         scores["caesar"] += 10
+    elif entropy <= 4.5:
+        scores["substitution"] += 4
+        scores["vigenere"] += 6
+    elif entropy <= 5.2:
+        scores["vigenere"] += 10
 
     if frequency:
         peak = max(data["percent"] for data in frequency.values())
@@ -58,6 +70,11 @@ def classify(report, text):
         if peak >= 11:
             scores["substitution"] += 14
             scores["caesar"] += 12
+        elif peak >= 8:
+            scores["substitution"] += 4
+            scores["vigenere"] += 4
+        elif peak < 8:
+            scores["vigenere"] += 10
 
     if bigrams:
         counts = list(bigrams.values())
@@ -66,16 +83,23 @@ def classify(report, text):
         if bigram_peak >= 0.08:
             scores["substitution"] += 8
             scores["caesar"] += 6
+        elif bigram_peak < 0.04:
+            scores["vigenere"] += 8
 
     if patterns:
-        scores["substitution"] += 10
-        scores["caesar"] += 10
+        unique = len(set(patterns.values()))
+        if unique <= 3:
+            scores["substitution"] += 10
+            scores["caesar"] += 10
+        else:
+            scores["vigenere"] += 6
 
     cipher = max(scores, key=scores.get)
 
     names = {
         "substitution": "Monoalphabetic Substitution",
         "caesar": "Caesar Cipher",
+        "vigenere": "Vigenere Cipher",
     }
 
     return {
