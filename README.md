@@ -5,6 +5,7 @@ this is a tool for decrypting and analyzing ciphers
 ## Supported Ciphers & Encodings
 - Monoalphabetic substitution cipher cracking
 - Caesar cipher
+- Vigenère cipher
 - Base64 decoding
 - Base32 decoding
 - Hex decoding
