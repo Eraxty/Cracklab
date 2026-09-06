@@ -1,7 +1,5 @@
 from pathlib import Path
 import re
-import sys
-import readline
 
 from analysis.dict import PatternDictionary
 from analysis.iterative_solver import solve, decrypt, score_text
@@ -10,58 +8,60 @@ from ciphers.caesar import crack as crack_caesar
 from ciphers.vigenere import solve as crack_vigenere
 from encoding.base import solve as solve_base
 from encoding.morse_more import decode_morse, decode_binary, decode_hex
-from tools.visualize import console, panel, banner, clear
+from rich.console import Console
+from rich.panel import Panel
 from tools.prompts import prompt
 from tools.colors import green, red, cyan, dim, reset
 
+console = Console()
 ROOT = Path(__file__).resolve().parent
 WORDLIST_FILE = ROOT / "data" / "cleaned_words.txt"
 FALLBACK_WORDLIST = ROOT / "data" / "words.txt"
 
 
-def _load_dictionary(wordlist_path):
-    dictionary = PatternDictionary()
-
-    if wordlist_path.exists():
-        dictionary.load(wordlist_path)
-        return dictionary
-
-    if FALLBACK_WORDLIST.exists():
-        dictionary.load(FALLBACK_WORDLIST)
-        return dictionary
-
-    raise FileNotFoundError(
-        f"No word list found at {wordlist_path} or {FALLBACK_WORDLIST}"
-    )
+def panel(content, border="cyan"):
+    return Panel(content, border_style=border, expand=False)
 
 
-def _save_results(plaintext):
-    results_path = ROOT / "results.txt"
-    results_path.write_text(plaintext + "\n")
+def load_dictionary():
+    path = WORDLIST_FILE if WORDLIST_FILE.exists() else FALLBACK_WORDLIST
+    if not path.exists():
+        raise FileNotFoundError(f"no wordlist at {WORDLIST_FILE} or {FALLBACK_WORDLIST}")
+    d = PatternDictionary()
+    d.load(path)
+    return d
+
+
+def save(plaintext):
+    (ROOT / "results.txt").write_text(plaintext + "\n")
+
+
+def show(plaintext, *extra):
+    save(plaintext)
+    console.print(panel(plaintext, "green"))
+    
+    for line in extra:
+        console.print(line)
 
 
 def main():
     try:
-        dictionary = _load_dictionary(WORDLIST_FILE)
+        dictionary = load_dictionary()
     except FileNotFoundError as exc:
         console.print(f"{red}Error: {exc}{reset}")
         return 1
 
-    clear()
-    banner()
-
     text = prompt("\nEnter ciphertext:\n> ")
-
     if not text:
         console.print(f"{red}No ciphertext entered.{reset}")
         return 1
 
     report = generate_report(text, dictionary)
-    classification = report["classification"]
-    cipher_name = classification["cipher"].replace(" Substitution", "")
+    cls = report["classification"]
+    cipher = cls["cipher"]
 
     console.print(panel(
-        f"Cipher: {cyan}{cipher_name}{reset} ({classification['confidence']}%)\n"
+        f"Cipher: {cyan}{cipher.replace(' Substitution', '')}{reset} ({cls['confidence']}%)\n"
         f"IoC: {report['ioc']:.4f}  Entropy: {report['entropy']:.2f}"
     ))
 
@@ -70,78 +70,52 @@ def main():
         console.print(f"  {item['letter']}  {item['percent']:.2f}%")
 
     console.print(f"\n{cyan}Bigrams{reset}")
-    ranked_bigrams = sorted(
-        report["bigrams"].items(),
-        key=lambda x: (-x[1], x[0]),
-    )[:10]
-    for gram, count in ranked_bigrams:
+    for gram, count in sorted(report["bigrams"].items(), key=lambda x: (-x[1], x[0]))[:10]:
         console.print(f"  {gram}  {count}")
-
     console.print()
 
     decoded, encoding = solve_base(text)
 
-    if classification["cipher"] == "Monoalphabetic Substitution":
-        cipher_words = re.findall(r"[A-Z]+", text.upper())
+    if cipher == "Monoalphabetic Substitution":
+        words = re.findall(r"[A-Z]+", text.upper())
         console.print(f"{dim}running substitution solver...{reset}")
-        mapping = solve(cipher_words, dictionary)
-        mono_plain = decrypt(cipher_words, mapping)
+        mono_plain = decrypt(words, solve(words, dictionary))
         mono_score = score_text(mono_plain)
 
         console.print(f"{dim}running vigenere solver...{reset}")
-        vig_result = crack_vigenere(text)
-        vig_plain = vig_result["plaintext"]
-        vig_score = score_text(vig_plain)
+        vig = crack_vigenere(text)
+        vig_score = score_text(vig["plaintext"])
 
         if vig_score > mono_score:
-            _save_results(vig_plain)
-            console.print(panel(f"{green}{vig_plain}{reset}", "green"))
-            console.print(f"Key: {vig_result['key']}")
+            show(vig["plaintext"], f"Key: {vig['key']}")
         else:
-            _save_results(mono_plain)
-            console.print(panel(f"{green}{mono_plain}{reset}", "green"))
-            console.print(f"Score: {mono_score}")
+            show(mono_plain, f"Score: {mono_score}")
 
     elif decoded:
-        _save_results(decoded)
-        console.print(panel(f"{green}{decoded}{reset}", "green"))
-        console.print(f"Encoding: {encoding}")
+        show(decoded, f"Encoding: {encoding}")
 
-    elif classification["cipher"] == "Caesar Cipher":
-        console.print(f"{dim}brute-forcing 26 shifts...{reset}")
+    elif cipher == "Caesar Cipher":
+        console.print(f"{dim}brute forcing 26 shifts...{reset}")
         plaintext, shift = crack_caesar(text)
-        _save_results(plaintext)
-        console.print(panel(f"{green}{plaintext}{reset}", "green"))
-        console.print(f"Shift: {shift}")
+        show(plaintext, f"Shift: {shift}")
 
-    elif classification["cipher"] == "Vigenere Cipher":
+    elif cipher == "Vigenere Cipher":
         console.print(f"{dim}analyzing key length...{reset}")
         result = crack_vigenere(text)
-        plaintext = result["plaintext"]
-        key = result["key"]
-        _save_results(plaintext)
-        console.print(panel(f"{green}{plaintext}{reset}", "green"))
-        console.print(f"Key: {key}")
+        show(result["plaintext"], f"Key: {result['key']}")
 
-    elif classification["cipher"] == "Morse":
-        plaintext = decode_morse(text)
-        _save_results(plaintext)
-        console.print(panel(f"{green}{plaintext}{reset}", "green"))
+    elif cipher == "Morse":
+        show(decode_morse(text))
 
-    elif classification["cipher"] == "Binary":
-        plaintext = decode_binary(text)
-        _save_results(plaintext)
-        console.print(panel(f"{green}{plaintext}{reset}", "green"))
+    elif cipher == "Binary":
+        show(decode_binary(text))
 
-    elif classification["cipher"] == "Hex":
-        plaintext = decode_hex(text)
-        _save_results(plaintext)
-        console.print(panel(f"{green}{plaintext}{reset}", "green"))
+    elif cipher == "Hex":
+        show(decode_hex(text))
 
     else:
-        console.print(f"{red}No solver available for: {classification['cipher']}{reset}")
+        console.print(f"{red}No solver available for: {cipher}{reset}")
 
-    prompt("\n[enter]")
     return 0
 
 
