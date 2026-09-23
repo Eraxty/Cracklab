@@ -11,32 +11,36 @@ from analysis.eng_words import (
 from analysis.patterns import word_pattern
 
 
-def _score_letter_frequency(word):
+def _score_letter_frequency(word): # score based on common letters
     score = 0
+    
     for letter in word:
         if letter in COMMON_LETTERS:
             score += len(COMMON_LETTERS) - COMMON_LETTERS.index(letter)
     return score
 
 
-def _score_bigrams(word):
+def _score_bigrams(word): # common letter pairs
     score = 0
+    
     for i in range(len(word) - 1):
         if word[i:i + 2] in COMMON_BIGRAMS:
             score += 10
     return score
 
 
-def _score_trigrams(word):
+def _score_trigrams(word): #u get it common 3 letter
     score = 0
+    
     for i in range(len(word) - 2):
         if word[i:i + 3] in COMMON_TRIGRAMS:
             score += 18
     return score
 
 
-def _score_vowel_pattern(word):
+def _score_vowel_pattern(word):# basic vowel check
     vowels = sum(1 for letter in word if letter in VOWELS)
+    
     if vowels == 0:
         return -20
 
@@ -48,7 +52,7 @@ def _score_vowel_pattern(word):
     return 0
 
 
-def _score_rare_letters(word):
+def _score_rare_letters(word): # penalize unusual letters
     penalty = 0
 
     for letter in word:
@@ -92,14 +96,14 @@ def _is_consistent_with_mapping(word, cipher_word, mapping):
     return True
 
 
-class PatternDictionary:
+class PatternDictionary: #dict grouped by word pattern
     def __init__(self):
         self.patterns = {}
         self.pattern_stats = {}
         self.pattern_words = {}
         self.common_words = set()
 
-    def load(self, filename, common_words_path=None):
+    def load(self, filename, common_words_path = None): #load common words
         if common_words_path is None:
             common_words_path = Path(filename).parent / "common_words.txt"
 
@@ -110,10 +114,11 @@ class PatternDictionary:
                     for line in f
                     if line.strip()
                 }
+        
         except FileNotFoundError:
             self.common_words = set()
 
-        with open(filename, encoding="utf-8") as file:
+        with open(filename, encoding = "utf-8") as file:
             for line in file:
                 word = line.strip().upper()
 
@@ -147,7 +152,7 @@ class PatternDictionary:
 
         for pattern, candidates in self.patterns.items():
             candidates.sort(
-                key=lambda c: (-c["score"], c["length"], c["word"])
+                key = lambda c: (-c["score"], c["length"], c["word"])
             )
 
     def find_matches(self, cipher_word, limit=20, mapping=None):
@@ -179,7 +184,7 @@ class PatternDictionary:
 
         return results[:limit]
 
-    def find_partial_matches(self, pattern, limit=None):
+    def find_partial_matches(self, pattern, limit = None):
         pattern = pattern.upper()
         results = []
 

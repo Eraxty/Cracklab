@@ -4,6 +4,7 @@ import re
 from analysis.dict import PatternDictionary
 from analysis.iterative_solver import solve, decrypt, score_text
 from analysis.report import generate_report
+from analysis.ml_classifier import classify as ml_classify
 from ciphers.caesar import crack as crack_caesar
 from ciphers.vigenere import solve as crack_vigenere
 from encoding.base import solve as solve_base
@@ -79,7 +80,7 @@ def main():
         return 1
 
     report = generate_report(text, dictionary)
-    cls = report["classification"]
+    cls = ml_classify(text)
     cipher = cls["cipher"]
 
     console.print(panel(

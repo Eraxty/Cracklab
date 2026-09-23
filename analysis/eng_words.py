@@ -6,9 +6,10 @@ DATA_DIR = ROOT / "data"
 
 def _load_word_set(filename):
     path = DATA_DIR / filename
+    
     return {
         line.strip().upper()
-        for line in path.read_text(encoding="utf-8").splitlines()
+        for line in path.read_text(encoding = "utf-8").splitlines()
         if line.strip()
     }
 
