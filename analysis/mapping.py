@@ -3,6 +3,7 @@ def is_mapping_valid(mapping):
     plain_to_cipher = {}
 
     for cipher_letter, plain_letter in mapping.items():
+        
         if cipher_to_plain.get(cipher_letter) not in (None, plain_letter):
             return False
 

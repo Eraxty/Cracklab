@@ -4,16 +4,20 @@ from collections import Counter
 def prepare_words(cipher_words, dictionary):
     counts = Counter(cipher_words)
     words = []
+    
     for word in cipher_words:
         if any(item["word"] == word for item in words):
             continue
-        matches = dictionary.find_matches(word, limit=None)
+        
+        matches = dictionary.find_matches(word, limit = None)
+        
         words.append({
             "word": word,
             "length": len(word),
             "count": counts[word],
             "candidate_count": len(matches),
         })
+    
     words.sort(
         key=lambda x: (
             x["candidate_count"],
@@ -21,4 +25,5 @@ def prepare_words(cipher_words, dictionary):
             -x["count"],
         )
     )
+
     return words

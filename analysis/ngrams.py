@@ -11,8 +11,10 @@ def count_ngrams(text: str, n: int):
 
     for i in range(len(clean_text) - n + 1):
         gram = clean_text[i:i + n]
+        
         if gram in ngrams:
             ngrams[gram] += 1
+        
         else:
             ngrams[gram] = 1
     return ngrams

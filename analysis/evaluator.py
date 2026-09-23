@@ -11,6 +11,7 @@ def build_mapping(cipher_word, old_pattern, candidate):
 
 def is_valid_mapping(mapping):
     values = list(mapping.values())
+    
     return len(values) == len(set(values))
 
 def merge_mapping(current_mapping, new_mapping):
@@ -46,4 +47,5 @@ def evaluate_candidate(
         cipher_words,
         merged_mapping,
     )
+    
     return plaintext, merged_mapping

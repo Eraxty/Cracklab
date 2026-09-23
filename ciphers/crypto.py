@@ -12,6 +12,7 @@ def encrypt(message, key):
     aes = AESGCM(key)
     ciphertext = aes.encrypt(nonce,message.encode("utf-8"),None,)
     encrypted = nonce + ciphertext
+    
     return base64.urlsafe_b64encode(encrypted).decode("utf-8")
 
 def decrypt(encrypted_text, key):
@@ -20,4 +21,5 @@ def decrypt(encrypted_text, key):
     ciphertext = encrypted[12:]
     aes = AESGCM(key)
     plaintext = aes.decrypt(nonce,ciphertext,None,)
+    
     return plaintext.decode("utf-8")

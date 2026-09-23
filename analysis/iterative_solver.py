@@ -60,7 +60,7 @@ class CandidateEvaluation:
     impossible_bigrams: int
 
 
-@dataclass(frozen=True)
+@dataclass(frozen = True)
 class WordEvaluation:
     cipher_word: str
     plaintext_word: str
@@ -70,8 +70,10 @@ class WordEvaluation:
 
 def decrypt(cipher_words, mapping):
     plaintext = []
+
     for word in cipher_words:
         plaintext.append("".join(mapping.get(letter, UNKNOWN) for letter in word.upper()))
+
     return " ".join(plaintext)
 
 
@@ -81,45 +83,58 @@ def _known_mapping_count(mapping):
 
 def _is_mapping_valid(mapping):
     plain_to_cipher = {}
+
     for cipher_letter, plain_letter in mapping.items():
+
         if not cipher_letter.isalpha() or not plain_letter.isalpha():
             return False
         existing_cipher = plain_to_cipher.get(plain_letter)
+
         if existing_cipher is not None and existing_cipher != cipher_letter:
             return False
+
         plain_to_cipher[plain_letter] = cipher_letter
+
     return True
 
 
 def _merge_replacing_word(current_mapping, cipher_word, candidate_word):
     candidate_mapping = create_mapping(cipher_word, candidate_word)
+
     if candidate_mapping is None:
         return None
 
     merged = dict(current_mapping)
+
     for cipher_letter in cipher_word.upper():
         merged.pop(cipher_letter, None)
+
     merged.update(candidate_mapping)
 
     if not _is_mapping_valid(merged):
         return None
+
     return merged
 
 def generate_candidates(cipher_word, current_mapping, dictionary):
     cipher_word = cipher_word.upper()
     pattern = word_pattern(cipher_word)
     matches = dictionary.find_matches(
+
         cipher_word,
-        limit=MAX_CANDIDATES_PER_WORD,
-        mapping=current_mapping,
+        limit = MAX_CANDIDATES_PER_WORD,
+        mapping = current_mapping,
     )
     candidates = []
 
     for match in matches:
         candidate_word = match["word"].upper()
+    
         if word_pattern(candidate_word) != pattern:
             continue
+    
         merged = _merge_replacing_word(current_mapping, cipher_word, candidate_word)
+    
         if merged is None:
             continue
         candidates.append((candidate_word, merged))
@@ -132,8 +147,10 @@ def _ngram_stream(text):
 
 def _score_ngrams(stream, size, scores, weight, unknown_penalty):
     total = 0
+    
     for i in range(len(stream) - size + 1):
         gram = stream[i:i + size]
+    
         if UNKNOWN in gram:
             total += unknown_penalty
         else:

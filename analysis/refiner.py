@@ -60,7 +60,7 @@ def build_filtered(result_text):
             filtered.append((cipher, plain))
 
     filtered.sort(
-        key=lambda x: (
+        key = lambda x: (
             len(dictionary.find_partial_matches(x[1], limit=None)),
             -len(x[1].replace("_", "")),
         )
@@ -122,8 +122,8 @@ while True:
             best_mapping = mapping
 
     scored.sort(
-        key=lambda x: x[0],
-        reverse=True,
+        key = lambda x: x[0],
+        reverse = True,
     )
 
     best = scored[:5]

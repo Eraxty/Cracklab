@@ -33,6 +33,7 @@ def menu_table(rows):
         box = None,
         padding = (0, 2),
     )
+    
     table.add_column("num", style = "bold cyan", width = 3)
     table.add_column("label", style = "white")
 
