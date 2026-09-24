@@ -3,7 +3,7 @@ def is_mapping_valid(mapping):
     plain_to_cipher = {}
 
     for cipher_letter, plain_letter in mapping.items():
-        
+
         if cipher_to_plain.get(cipher_letter) not in (None, plain_letter):
             return False
 
@@ -37,20 +37,3 @@ def create_mapping(cipher_word, plain_word):
         return None
 
     return mapping
-
-
-def merge_mappings(map1, map2):
-    merged = dict(map1)
-
-    for cipher_letter, plain_letter in map2.items():
-        existing_plain = merged.get(cipher_letter)
-
-        if existing_plain is not None and existing_plain != plain_letter:
-            return None
-
-        merged[cipher_letter] = plain_letter
-
-    if not is_mapping_valid(merged):
-        return None
-
-    return merged

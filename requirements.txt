@@ -1,4 +1,4 @@
 cryptography
 rich
-scikit-learn
-joblib
+prompt_toolkit
+colorama

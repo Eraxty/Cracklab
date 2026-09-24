@@ -1,6 +1,5 @@
 import subprocess
 import sys
-import readline
 import os
 
 from ciphers.crypto import generate_key, encrypt, decrypt
@@ -8,7 +7,7 @@ from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from tools.prompts import prompt
-from tools.colors import green, red, cyan, reset
+from tools.colors import cyan, reset
 
 
 console = Console()

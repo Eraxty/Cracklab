@@ -49,12 +49,6 @@ IMPOSSIBLE_BIGRAMS = {
     "QJ", "QQ", "QX", "QY", "JQ", "JX", "JZ", "XQ", "XZ", "ZQ", "ZX", "ZJ",
 }
 
-COMMON_DOUBLES = {
-    "LL", "EE", "SS", "OO",
-    "TT", "RR", "NN", "FF",
-    "PP", "MM",
-}
-
 COMMON_QUADGRAMS = {
     "TION": 7, "THER": 6, "THAT": 6, "WITH": 6, "MENT": 6,
     "OULD": 5, "IGHT": 5, "HAVE": 5, "HICH": 5, "WHIC": 5,
@@ -72,17 +66,6 @@ RARE_BIGRAMS = {
     "VX", "XV", "BX", "XB", "WX", "XW", "VJ", "JV",
     "FQ", "QF", "GX", "XG", "HX", "XH", "KX", "XK",
     "WZ", "ZW", "VQ", "QV", "VZ", "ZV",
-}
-
-PHRASE_BONUSES = {
-    "OF THE": 20, "IN THE": 20, "TO THE": 20, "AND THE": 20,
-    "FOR THE": 20, "ON THE": 15, "AT THE": 15, "BY THE": 15,
-    "FROM THE": 20, "WITH THE": 20, "THAT THE": 15,
-    "IS A": 15, "IN A": 12, "OF A": 12, "TO A": 12,
-    "AND A": 12, "IT IS": 15, "THAT IS": 15, "THIS IS": 15,
-    "THERE IS": 15, "TO BE": 15, "CAN BE": 12, "WILL BE": 12,
-    "HAS BEEN": 12, "HAVE BEEN": 12, "WOULD BE": 12,
-    "COULD BE": 12, "SHOULD BE": 12, "HOW TO": 12,
 }
 
 UNKNOWN = "_"
@@ -130,41 +113,4 @@ ENGLISH_FREQUENCIES = {
     "X": 0.15,
     "Q": 0.10,
     "Z": 0.07,
-}
-
-ENGLISH = {
-    "letters": ENGLISH_FREQUENCIES,
-    "bigrams": [
-        "TH", "HE", "IN", "ER", "AN",
-        "RE", "ON", "AT", "EN", "ND",
-        "TI", "ES", "OR", "TE", "OF",
-        "ED", "IS", "IT", "AL", "AR",
-        "ST", "TO", "NT", "NG", "SE",
-    ],
-    "trigrams": [
-        "THE", "ING", "AND", "HER", "ERE",
-        "ENT", "THA", "NTH", "WAS", "ETH",
-        "FOR", "DTH", "HAT", "ION", "TIO",
-        "VER", "TER", "HES", "ATI", "ALL",
-    ],
-    "double_letters": [
-        "LL", "EE", "SS", "OO", "TT",
-        "FF", "RR", "NN", "PP", "CC",
-    ],
-    "one_letter_words": [
-        "A",
-        "I",
-    ],
-    "common_two_letter_words": [
-        "OF", "TO", "IN", "IT", "IS",
-        "BE", "AS", "AT", "SO", "WE",
-        "HE", "BY", "OR", "ON", "DO",
-        "IF", "ME", "MY", "UP", "AN",
-    ],
-    "common_three_letter_words": [
-        "THE", "AND", "FOR", "ARE", "BUT",
-        "NOT", "YOU", "ALL", "ANY", "CAN",
-        "HAD", "HER", "WAS", "ONE", "OUR",
-        "OUT", "DAY", "GET", "HAS", "HIM",
-    ],
 }

@@ -1,34 +1,19 @@
 from encoding.base import decode_base32, decode_base64
-
 from encoding.morse_more import decode_morse, decode_binary, decode_hex
 
-def classify(report, text): # Trying formats that can be identified directly
-    if decode_base32(text):
-        return {
-            "cipher": "Base32",
-            "confidence": 99,
-        }
 
-    if decode_base64(text):
-        return {
-            "cipher": "Base64",
-            "confidence": 99,
-        }
-    
-    if decode_morse(text):
-        return {"cipher":"Morse",
-                "confidence": 99
-        }
-    
-    if decode_binary(text):
-        return {"cipher": "Binary",
-                "confidence":99
-        }
+def classify(report, text):
+    direct = (
+        ("Base32", decode_base32),
+        ("Base64", decode_base64),
+        ("Morse", decode_morse),
+        ("Binary", decode_binary),
+        ("Hex", decode_hex),
+    )
 
-    if decode_hex(text):
-        return {"cipher": "Hex",
-                "confidence":99
-        }
+    for name, decoder in direct:
+        if decoder(text):
+            return {"cipher": name, "confidence": 99}
 
     ioc = report["ioc"]
     entropy = report["entropy"]
@@ -42,9 +27,7 @@ def classify(report, text): # Trying formats that can be identified directly
         "vigenere": 0,
     }
 
-
-
-    if ioc >= 0.06: # IOC helps separate ciphers based on how much letter frequency is preserved
+    if ioc >= 0.06:
         scores["substitution"] += 24
         scores["caesar"] += 18
     
@@ -60,13 +43,15 @@ def classify(report, text): # Trying formats that can be identified directly
     elif ioc >= 0.038:
         scores["vigenere"] += 18
 
-    
+
     if entropy <= 4.0:
         scores["substitution"] += 12
         scores["caesar"] += 10
+
     elif entropy <= 4.5:
         scores["substitution"] += 4
         scores["vigenere"] += 6
+
     elif entropy <= 5.2:
         scores["vigenere"] += 10
 
@@ -76,12 +61,13 @@ def classify(report, text): # Trying formats that can be identified directly
         if peak >= 11:
             scores["substitution"] += 14
             scores["caesar"] += 12
+
         elif peak >= 8:
             scores["substitution"] += 4
             scores["vigenere"] += 4
-        elif peak < 8:
-            scores["vigenere"] += 10
 
+        else:
+            scores["vigenere"] += 10
 
     if bigrams:
         counts = list(bigrams.values())
@@ -93,7 +79,6 @@ def classify(report, text): # Trying formats that can be identified directly
         elif bigram_peak < 0.04:
             scores["vigenere"] += 8
 
-
     if patterns:
         unique = len(set(patterns.values()))
 
@@ -103,7 +88,7 @@ def classify(report, text): # Trying formats that can be identified directly
         else:
             scores["vigenere"] += 6
 
-    cipher = max(scores, key=scores.get)
+    cipher = max(scores, key = scores.get)
 
     names = {
         "substitution": "Monoalphabetic Substitution",

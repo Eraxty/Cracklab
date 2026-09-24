@@ -1,4 +1,4 @@
-from analysis.english_scorer import score_text
+from analysis.iterative_solver import score_text
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -29,4 +29,5 @@ def crack(text):
             best_text = decrypted
             best_shift = shift
             best_score = score
+    
     return best_text, best_shift
