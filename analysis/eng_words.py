@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 
 
-def _load_word_set(filename):
+def load_word_set(filename):
     path = DATA_DIR / filename
     
     return {
@@ -14,9 +14,9 @@ def _load_word_set(filename):
     }
 
 
-COMMON_WORDS = _load_word_set("common_words.txt")
+COMMON_WORDS = load_word_set("common_words.txt")
 COMMON_SET = COMMON_WORDS
-WORD_SET = _load_word_set("cleaned_words.txt")
+WORD_SET = load_word_set("cleaned_words.txt")
 
 COMMON_LETTERS = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 

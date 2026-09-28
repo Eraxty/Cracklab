@@ -8,11 +8,11 @@ from analysis.patterns import word_pattern
 CHARS = string.ascii_uppercase
 
 
-def _normalize_text(text):
+def normalize_text(text):
     return text.upper()
 
 
-def _letter_frequency(text):
+def letter_frequency(text):
     frequency = {char: 0 for char in CHARS}
 
     for char in text:
@@ -30,7 +30,7 @@ def _letter_frequency(text):
     }
 
 
-def _count_ngrams(text, n):
+def count_ngrams(text, n):
     clean = "".join(char for char in text if char in CHARS)
     grams = {}
 
@@ -41,7 +41,7 @@ def _count_ngrams(text, n):
     return grams
 
 
-def _top_letters(frequency, limit=10):
+def top_letters(frequency, limit=10):
     ranked = sorted(
         frequency.items(),
         key=lambda item: (-item[1]["count"], item[0]),
@@ -53,7 +53,7 @@ def _top_letters(frequency, limit=10):
     ]
 
 
-def _word_patterns(text):
+def word_patterns(text):
     words = re.findall(r"[A-Z]+", text.upper())
     patterns = {}
 
@@ -64,7 +64,7 @@ def _word_patterns(text):
     return patterns
 
 
-def _index_of_coincidence(frequency):
+def index_of_coincidence(frequency):
     counts = [data["count"] for data in frequency.values() if data["count"] > 0]
     total = sum(counts)
 
@@ -77,7 +77,7 @@ def _index_of_coincidence(frequency):
     return numerator / denominator if denominator else 0.0
 
 
-def _shannon_entropy(frequency):
+def shannon_entropy(frequency):
     counts = [data["count"] for data in frequency.values() if data["count"] > 0]
     total = sum(counts)
 
@@ -94,17 +94,17 @@ def _shannon_entropy(frequency):
 
 
 def generate_report(text, dictionary):
-    normalized = _normalize_text(text)
-    frequency = _letter_frequency(normalized)
+    normalized = normalize_text(text)
+    frequency = letter_frequency(normalized)
 
     report = {
         "frequency": frequency,
-        "top_letters": _top_letters(frequency, limit = 10),
-        "bigrams": _count_ngrams(normalized, 2),
-        "trigrams": _count_ngrams(normalized, 3),
-        "ioc": _index_of_coincidence(frequency),
-        "entropy": _shannon_entropy(frequency),
-        "patterns": _word_patterns(normalized),
+        "top_letters": top_letters(frequency, limit = 10),
+        "bigrams": count_ngrams(normalized, 2),
+        "trigrams": count_ngrams(normalized, 3),
+        "ioc": index_of_coincidence(frequency),
+        "entropy": shannon_entropy(frequency),
+        "patterns": word_patterns(normalized),
     }
 
     report["classification"] = classify(report, text)

@@ -11,7 +11,7 @@ from analysis.eng_words import (
 from analysis.patterns import word_pattern
 
 
-def _score_letter_frequency(word): # score based on common letters
+def score_letter_frequency(word): # score based on common letters
     score = 0
     
     for letter in word:
@@ -20,7 +20,7 @@ def _score_letter_frequency(word): # score based on common letters
     return score
 
 
-def _score_bigrams(word): # common letter pairs
+def score_bigrams(word): # common letter pairs
     score = 0
     
     for i in range(len(word) - 1):
@@ -29,7 +29,7 @@ def _score_bigrams(word): # common letter pairs
     return score
 
 
-def _score_trigrams(word): #u get it common 3 letter
+def score_trigrams(word): #u get it common 3 letter
     score = 0
     
     for i in range(len(word) - 2):
@@ -38,7 +38,7 @@ def _score_trigrams(word): #u get it common 3 letter
     return score
 
 
-def _score_vowel_pattern(word):# basic vowel check
+def score_vowel_pattern(word):# basic vowel check
     vowels = sum(1 for letter in word if letter in VOWELS)
     
     if vowels == 0:
@@ -52,7 +52,7 @@ def _score_vowel_pattern(word):# basic vowel check
     return 0
 
 
-def _score_rare_letters(word): # penalize unusual letters
+def score_rare_letters(word): # penalize unusual letters
     penalty = 0
 
     for letter in word:
@@ -62,14 +62,14 @@ def _score_rare_letters(word): # penalize unusual letters
     return penalty
 
 
-def _score_word(word, common_words):
+def score_word(word, common_words):
     score = 0
 
-    score += _score_letter_frequency(word)
-    score += _score_bigrams(word)
-    score += _score_trigrams(word)
-    score += _score_vowel_pattern(word)
-    score += _score_rare_letters(word)
+    score += score_letter_frequency(word)
+    score += score_bigrams(word)
+    score += score_trigrams(word)
+    score += score_vowel_pattern(word)
+    score += score_rare_letters(word)
 
     if word.endswith(COMMON_ENDINGS):
         score += 8
@@ -80,7 +80,7 @@ def _score_word(word, common_words):
     return score
 
 
-def _is_consistent_with_mapping(word, cipher_word, mapping):
+def is_consistent_with_mapping(word, cipher_word, mapping):
     plain_to_cipher = {v: k for k, v in mapping.items()}
 
     for cipher_letter, plain_letter in zip(cipher_word.upper(), word.upper()):
@@ -131,7 +131,7 @@ class PatternDictionary: #dict grouped by word pattern
                     "word": word,
                     "length": len(word),
                     "pattern": pattern,
-                    "score": _score_word(word, self.common_words),
+                    "score": score_word(word, self.common_words),
                 }
 
                 if pattern not in self.patterns:
@@ -163,7 +163,7 @@ class PatternDictionary: #dict grouped by word pattern
             matches = [
                 match
                 for match in matches
-                if _is_consistent_with_mapping(
+                if is_consistent_with_mapping(
                     match["word"],
                     cipher_word,
                     mapping,

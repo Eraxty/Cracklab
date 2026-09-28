@@ -12,12 +12,12 @@ FREQ = {
 }
 
 
-def _clean(s):
+def clean(s):
     return ''.join(c for c in s.upper() if c in ALPHA)
 
 
 def encrypt(text, key):
-    key = _clean(key)
+    key = clean(key)
     out = []
     ki = 0
 
@@ -34,7 +34,7 @@ def encrypt(text, key):
 
 
 def decrypt(text, key):
-    key = _clean(key)
+    key = clean(key)
     out = []
     ki = 0
     
@@ -49,7 +49,7 @@ def decrypt(text, key):
     return ''.join(out)
 
 
-def _chi2(text):
+def chi2(text):
     n = len(text)
     
     if n == 0:
@@ -65,7 +65,7 @@ def _chi2(text):
     return total
 
 
-def _repeats(text, n):
+def repeats(text, n):
     seen = {}
     for i in range(len(text) - n + 1):
         seg = text[i:i + n]
@@ -79,7 +79,7 @@ def _repeats(text, n):
     return dists
 
 
-def _factors(n, cap):
+def factors(n, cap):
     return [f for f in range(2, cap + 1) if n % f == 0]
 
 
@@ -87,7 +87,7 @@ def guess_keylen(text, cap=20):
     dists = []
     
     for n in (3, 4, 5):
-        dists += _repeats(text, n)
+        dists += repeats(text, n)
 
     if not dists:
         return list(range(1, cap + 1))
@@ -95,7 +95,7 @@ def guess_keylen(text, cap=20):
     counts = Counter()
     
     for d in dists:
-        for f in _factors(d, cap):
+        for f in factors(d, cap):
             counts[f] += 1
 
     ranked = [f for f, _ in counts.most_common()]
@@ -106,12 +106,12 @@ def guess_keylen(text, cap=20):
     return ranked
 
 
-def _crack_column(col):
+def crack_column(col):
     best_shift, best_score = 0, float('inf')
     
     for shift in range(26):
         shifted = ''.join(ALPHA[(ALPHA.index(c) - shift) % 26] for c in col)
-        score = _chi2(shifted)
+        score = chi2(shifted)
     
         if score < best_score:
             best_score, best_shift = score, shift
@@ -119,16 +119,16 @@ def _crack_column(col):
 
 
 def solve(ciphertext, max_key_len=20, tries=8):
-    text = _clean(ciphertext)
+    text = clean(ciphertext)
     lens = guess_keylen(text, max_key_len)[:tries]
 
     best = None
     
     for kl in lens:
         cols = [text[i::kl] for i in range(kl)]
-        key = ''.join(_crack_column(c) for c in cols)
+        key = ''.join(crack_column(c) for c in cols)
         plain = decrypt(text, key)
-        score = _chi2(plain)
+        score = chi2(plain)
     
         if best is None or score < best[2]:
             best = (key, plain, score)

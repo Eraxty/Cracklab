@@ -20,7 +20,7 @@ def score_text(text):
     return total
 
 
-def _merge(cipher_word, plain_word, mapping):
+def merge(cipher_word, plain_word, mapping):
     merged = dict(mapping)
 
     for letter in cipher_word.upper():
@@ -54,7 +54,7 @@ def solve(cipher_words, dictionary, initial_mapping = None):
                 if word_pattern(plain_word) != word_pattern(cipher_word):
                     continue
 
-                merged = _merge(cipher_word, plain_word, mapping)
+                merged = merge(cipher_word, plain_word, mapping)
 
                 if merged is None:
                     continue
