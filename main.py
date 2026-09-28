@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from tools.prompts import prompt
 from tools.colors import cyan, reset
+from tools.clipboard import copy_text
 
 
 console = Console()
@@ -77,6 +78,12 @@ def main():
             ))
             console.print(f"Key: [cyan]{key.hex()}[/cyan]")
 
+            if prompt("Copy encrypted text to clipboard? [y/n]: ").lower() == "y":
+                if copy_text(encrypted):
+                    console.print("[green]Copied to clipboard.[/green]")
+                else:
+                    console.print("[red]Clipboard is not available[/red]")
+
         # decrypt with a key
         elif choice == "3":
             ciphertext = prompt("\nEncrypted text: ")
@@ -91,6 +98,12 @@ def main():
                     border_style = "green",
                     expand = False,
                 ))
+
+                if prompt("Copy decrypted text to clipboard? [y/n]: ").lower() == "y":
+                    if copy_text(plaintext):
+                        console.print("[green]Copied to clipboard.[/green]")
+                    else:
+                        console.print("[red]Clipboard is not available on this system.[/red]")
             except Exception:
                 console.print("[red]invalid key[/red]")
 

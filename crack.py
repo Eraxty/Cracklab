@@ -12,6 +12,7 @@ from encoding.morse_more import decode_morse, decode_binary, decode_hex
 from rich.console import Console
 from rich.panel import Panel
 from tools.colors import red, cyan, dim, reset
+from tools.clipboard import copy_text
 from tools.prompts import prompt
 
 
@@ -43,6 +44,12 @@ def show_result(plaintext, *extra):
 
     for line in extra:
         console.print(line)
+
+    if prompt("Copy to clipboard ? [y/n]: ").lower() == "y":
+        if copy_text(plaintext):
+            console.print(f"{cyan}Copied to clipboard !{reset}")
+        else:
+            console.print(f"{red}Clipboard is not available.{reset}")
 
 
 def show_analysis(report):
