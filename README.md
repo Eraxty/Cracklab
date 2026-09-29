@@ -41,6 +41,40 @@ Run CrackLab:
 ```bash
 python crack.py
 ```
+
+### Linux executable
+
+Made a executable for linux only 
+If you are using windows or mac please build from source.
+
+run using this from same dir
+```bash
+chmod +x crack
+./crack
+```
+
+### Build from source
+
+```bash
+git clone https://github.com/Eraxty/Cracklab.git
+cd Cracklab
+```
+
+Install the dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Run CrackLab
+
+```bash
+python main.py
+```
+
+On Windows, use `py` instead of `python` if that is the Python launcher
+available on your system, for example `py main.py`.
+
 ### How to use 
 
 Select option `1` and enter the ciphertext.

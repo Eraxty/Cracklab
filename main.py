@@ -1,7 +1,7 @@
-import subprocess
 import sys
 import os
 
+from crack import main as crack_main
 from ciphers.crypto import generate_key, encrypt, decrypt
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -63,7 +63,7 @@ def main():
 
         # crack a cipher
         if choice == "1":
-            subprocess.run([sys.executable, "crack.py"])
+            crack_main()
 
         # encrypt a message
         elif choice == "2":
