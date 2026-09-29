@@ -22,6 +22,7 @@ this is a tool for decrypting and analyzing ciphers
 - Pattern and dictionary matching
 - English text scoring
 - Key-based encryption and decryption
+- Copy encrypted, decrypted, and cracked results to the clipboard
 
 ## How it works 
 1) tries to identify the type of cipher or encoding.
@@ -71,9 +72,9 @@ OS: Arch Linux
 
 ## Screenshots
 
-![Cracklabcli](pics/image.png)
+![Cracklabcli](pics/main.png)
 
-![cracklab](pics/image1.png)
+![cracklab](pics/image.png)
 
 ### Encryption
 
@@ -110,6 +111,6 @@ pip install -r requirements.txt
 ```
 ## Use of AI
 
-AI was used while making the iterative solver because I couldn't figure it out, Even with AI, it took hours of testing and changing the approach before it finally worked.
+AI was used while making the iterative solver because I couldn't figure it out, Even with AI, it took hours of testing and changing the approach before it finally worked.But then i removed the ai code
 
 AI was also used for smaller things that made development easier, like generating word dictionaries, test data, and helping debug parts of the project.
