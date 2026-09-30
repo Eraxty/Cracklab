@@ -2,6 +2,9 @@
 
 this is a tool for decrypting and analyzing ciphers
 
+## Why Cracklab
+soo i made cracklab bcs i was given a encrypted cipher text by my friend and i had to go to many websites to try to solve so i thought why not make a program that can crack most encryptions in one app so i made this.
+
 ## Supported Ciphers & Encodings
 - Monoalphabetic substitution cipher cracking
 - Caesar cipher
@@ -23,6 +26,15 @@ this is a tool for decrypting and analyzing ciphers
 - English text scoring
 - Key-based encryption and decryption
 - Copy encrypted, decrypted, and cracked results to the clipboard
+
+## Tech Stack
+
+- [rich](https://github.com/Textualize/rich) for the terminal UI
+- [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for prompts
+- [cryptography](https://github.com/pyca/cryptography) for AES-GCM encrypt and decrypt
+- [pyperclip](https://github.com/asweigart/pyperclip) for clipboard
+- PyInstaller for the Linux executable
+
 
 ## How it works 
 1) tries to identify the type of cipher or encoding.
