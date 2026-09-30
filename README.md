@@ -48,18 +48,13 @@ soo i made cracklab bcs i was given a encrypted cipher text by my friend and i h
 
 ## Usage
 
-Run CrackLab:
-
-```bash
-python crack.py
-```
-
 ### Linux executable
 
-Made a executable for linux only 
+Made an executable for linux only 
 If you are using windows or mac please build from source.
 
 run using this from same dir
+
 ```bash
 chmod +x crack
 ./crack
