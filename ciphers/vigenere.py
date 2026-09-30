@@ -1,6 +1,8 @@
 import string
 from collections import Counter
 
+from analysis.iterative_solver import score_text
+
 ALPHA = string.ascii_uppercase
 
 FREQ = {
@@ -123,18 +125,19 @@ def solve(ciphertext, max_key_len=20, tries=8):
     lens = guess_keylen(text, max_key_len)[:tries]
 
     best = None
-    
+
     for kl in lens:
         cols = [text[i::kl] for i in range(kl)]
         key = ''.join(crack_column(c) for c in cols)
-        plain = decrypt(text, key)
-        score = chi2(plain)
-    
-        if best is None or score < best[2]:
+
+        plain = decrypt(ciphertext, key)
+        score = score_text(plain)
+
+        if best is None or score > best[2]:
             best = (key, plain, score)
 
     key, plain, score = best
-  
+
     return {
         'cipher': 'vigenere',
         'key': key,
